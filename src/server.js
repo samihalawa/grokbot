@@ -10,7 +10,12 @@ import crypto from 'node:crypto';
 import { GrokPoolRouter } from './pool.js';
 import { GrokAgentClient } from './agent.js';
 
-function getDashboardHtml(poolStatus, port) {
+function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
+  const isCuentas = activeTab === 'cuentas';
+  const isBots = activeTab === 'bots';
+  const isConsola = activeTab === 'consola';
+  const isIntegracion = activeTab === 'integracion';
+
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -126,17 +131,17 @@ function getDashboardHtml(poolStatus, port) {
     <div class="gov-meta-strip">
       <span>ESTADO: <strong>ACTIVO Y OPERATIVO</strong></span>
       <span>NÚMERO DE CUENTAS: <strong>${poolStatus.length}</strong></span>
-      <span>VERSIÓN: <strong>v1.2.0</strong></span>
+      <span>VERSIÓN: <strong>v1.2.2</strong></span>
     </div>
   </div>
 
   <!-- Action Ribbon -->
   <div class="action-ribbon">
     <div class="ribbon-btns">
-      <button class="gov-btn gov-btn-primary" onclick="showTab('tab-cuentas')">📋 01 - Cuentas & Cuotas</button>
-      <button class="gov-btn" onclick="showTab('tab-bots')">🤖 02 - Pasarela de Bots (WebSocket)</button>
-      <button class="gov-btn" onclick="showTab('tab-consola')">⚡ 03 - Consola Interactiva</button>
-      <button class="gov-btn" onclick="showTab('tab-integracion')">🔌 04 - Configuración Cursor / IDE</button>
+      <button class="gov-btn ${isCuentas ? 'gov-btn-primary' : ''}" onclick="showTab('tab-cuentas')">📋 01 - Cuentas & Cuotas</button>
+      <button class="gov-btn ${isBots ? 'gov-btn-primary' : ''}" onclick="showTab('tab-bots')">🤖 02 - Pasarela de Bots (WebSocket)</button>
+      <button class="gov-btn ${isConsola ? 'gov-btn-primary' : ''}" onclick="showTab('tab-consola')">⚡ 03 - Consola Interactiva</button>
+      <button class="gov-btn ${isIntegracion ? 'gov-btn-primary' : ''}" onclick="showTab('tab-integracion')">🔌 04 - Configuración Cursor / IDE</button>
     </div>
     <div>
       <span style="font-family:var(--mono); font-size:0.75rem; color:#475569; margin-right:0.5rem;">
@@ -182,7 +187,7 @@ function getDashboardHtml(poolStatus, port) {
     <!-- Main Content Panels -->
     <div class="content-area">
       <!-- TAB 1: Cuentas & Cuotas -->
-      <div id="tab-cuentas" class="tab-content active">
+      <div id="tab-cuentas" class="tab-content ${isCuentas ? 'active' : ''}">
         <div class="panel">
           <div class="panel-header">
             <span>Registro de Cuentas Configuradas & Estado de Capacidad</span>
@@ -265,7 +270,7 @@ function getDashboardHtml(poolStatus, port) {
       </div>
 
       <!-- TAB 2: Pasarela de Bots WebSocket -->
-      <div id="tab-bots" class="tab-content">
+      <div id="tab-bots" class="tab-content ${isBots ? 'active' : ''}">
         <div class="panel">
           <div class="panel-header">
             <span>Roster de Agentes y Bots Registrados en Cuentas (Conexión Directa WebSocket)</span>
@@ -292,7 +297,7 @@ function getDashboardHtml(poolStatus, port) {
       </div>
 
       <!-- TAB 3: Consola Interactiva REPL -->
-      <div id="tab-consola" class="tab-content">
+      <div id="tab-consola" class="tab-content ${isConsola ? 'active' : ''}">
         <div class="panel">
           <div class="panel-header">
             <span>Consola de Ejecución & Envío de Peticiones</span>
@@ -349,7 +354,7 @@ function getDashboardHtml(poolStatus, port) {
       </div>
 
       <!-- TAB 4: Integración Cursor / IDE -->
-      <div id="tab-integracion" class="tab-content">
+      <div id="tab-integracion" class="tab-content ${isIntegracion ? 'active' : ''}">
         <div class="panel">
           <div class="panel-header">Guía de Configuración Rápida para Entornos de Desarrollo</div>
           <div class="panel-body">
@@ -410,6 +415,13 @@ export OPENAI_MODEL="grok-3"</pre>
         refreshBots();
       }
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const h = window.location.hash;
+      if (h === '#bots') showTab('tab-bots');
+      else if (h === '#consola') showTab('tab-consola');
+      else if (h === '#integracion') showTab('tab-integracion');
+    });
 
     function copyProxyUrl() {
       const url = "http://127.0.0.1:${port}/v1";
@@ -671,9 +683,10 @@ export function createServer(router = null, port = 8000) {
 
     // GET / (Industrial Console)
     if (req.method === 'GET' && pathname === '/') {
+      const activeTab = url.searchParams.get('tab') || 'cuentas';
       const status = await routerInstance.getPoolStatus();
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(getDashboardHtml(status, port));
+      res.end(getDashboardHtml(status, port, activeTab));
       return;
     }
 
