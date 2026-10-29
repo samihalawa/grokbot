@@ -27,85 +27,123 @@ function getDashboardHtml(poolStatus, port) {
       --green: #10b981;
       --yellow: #f59e0b;
       --red: #ef4444;
+      --cyan: #38bdf8;
       --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: var(--font); padding: 2rem; line-height: 1.5; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; }
-    h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
-    .badge { background: var(--border); padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 500; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
-    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1.25rem; }
+    h1 { font-size: 1.5rem; display: flex; align-items: center; gap: 0.6rem; }
+    .badge { background: #1e293b; color: var(--cyan); padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; border: 1px solid #334155; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; transition: border-color 0.2s; }
+    .card:hover { border-color: #3b82f666; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
     .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-    .status-active { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .status-cooldown { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
-    .status-error { background: var(--red); box-shadow: 0 0 8px var(--red); }
-    .role-tag { background: #1e293b; color: #94a3b8; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px; margin-right: 0.25rem; }
+    .status-active { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .status-cooldown { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+    .status-error { background: var(--red); box-shadow: 0 0 10px var(--red); }
+    .role-tag { background: #1e293b; color: var(--cyan); font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px; margin-right: 0.35rem; font-weight: 500; }
     .meta-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 0.5rem; color: var(--muted); }
-    .box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
+    .progress-track { background: #1a1f30; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 0.75rem; }
+    .progress-bar { height: 100%; transition: width 0.4s ease; }
+    .box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; }
     input, textarea, button { font-family: inherit; }
-    textarea { width: 100%; background: #0b0d14; border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 0.75rem; min-height: 80px; resize: vertical; margin-bottom: 0.75rem; }
-    button { background: var(--primary); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    textarea { width: 100%; background: #0b0d14; border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 0.85rem; min-height: 80px; resize: vertical; margin-bottom: 0.75rem; font-size: 0.95rem; }
+    textarea:focus { outline: none; border-color: var(--primary); }
+    .button-row { display: flex; gap: 0.75rem; align-items: center; }
+    button { background: var(--primary); color: #fff; border: none; padding: 0.65rem 1.4rem; border-radius: 6px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
     button:hover { opacity: 0.9; }
-    #resultBox { margin-top: 1rem; padding: 1rem; background: #0b0d14; border: 1px solid var(--border); border-radius: 6px; display: none; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; }
-    code { font-family: monospace; background: #1e293b; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.85rem; }
+    .status-indicator { font-size: 0.85rem; color: var(--muted); }
+    #resultBox { margin-top: 1rem; padding: 1.25rem; background: #07090e; border: 1px solid var(--border); border-radius: 8px; display: none; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; line-height: 1.6; max-height: 400px; overflow-y: auto; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #1e293b; padding: 0.2rem 0.45rem; border-radius: 4px; font-size: 0.85rem; color: #f1f5f9; }
+    .copy-pill { cursor: pointer; background: #1e293b; border: 1px solid #334155; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.8rem; color: var(--cyan); display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; }
+    .copy-pill:hover { background: #26354a; }
   </style>
 </head>
 <body>
   <header>
-    <h1>🤖 grokbot <span class="badge">v1.1.0</span></h1>
-    <div style="font-size: 0.9rem; color: var(--muted);">
-      OpenAI Proxy: <code>http://127.0.0.1:${port}/v1</code>
+    <h1>🤖 grokbot <span class="badge">v1.1.2</span></h1>
+    <div style="font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 1rem;">
+      <div>OpenAI Proxy: <code>http://127.0.0.1:${port}/v1</code></div>
+      <div id="refreshTag" style="font-size: 0.8rem; color: var(--green);">● Live Connected</div>
     </div>
   </header>
 
-  <h2 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--muted);">POOL ACCOUNTS & REAL-TIME QUOTA</h2>
-  <div class="grid">
+  <h2 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--muted); display: flex; justify-content: space-between; align-items: center;">
+    <span>POOL ACCOUNTS & REAL-TIME QUOTA</span>
+    <span style="font-size: 0.8rem; color: #64748b;">Failover Policy: 15m HTTP 429 Cooldown</span>
+  </h2>
+  
+  <div class="grid" id="accountsGrid">
     ${poolStatus
       .map(
-        (a) => `
-      <div class="card">
+        (a) => {
+          const reqs = a.stats?.requests || 0;
+          const barW = Math.min(100, reqs === 0 ? 8 : Math.max(15, reqs * 25));
+          const barColor = a.cooldown ? 'var(--yellow)' : (a.auth_ok ? 'var(--green)' : 'var(--red)');
+          return `
+      <div class="card" id="card-${a.name}">
         <div class="card-header">
-          <strong>${a.name}</strong>
+          <strong style="font-size: 1.05rem;">${a.name}</strong>
           <span class="status-dot ${a.cooldown ? 'status-cooldown' : (a.auth_ok ? 'status-active' : 'status-error')}"></span>
         </div>
-        <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem;">${a.email || 'N/A'}</div>
-        <div>${(a.roles || []).map((r) => `<span class="role-tag">${r}</span>`).join('')}</div>
+        <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.6rem;">${a.email || 'N/A'}</div>
+        <div style="margin-bottom: 0.6rem;">${(a.roles || []).map((r) => `<span class="role-tag">${r}</span>`).join('')}</div>
+        
+        <div class="progress-track">
+          <div class="progress-bar" style="width: ${barW}%; background: ${barColor};"></div>
+        </div>
+
         <div class="meta-row">
           <span>Status:</span>
-          <span>${a.cooldown ? `Cooldown (${a.cooldown_remaining_sec}s)` : (a.auth_ok ? 'Healthy & Active' : 'Auth Required')}</span>
+          <span style="font-weight: 500; color: ${barColor};">${a.cooldown ? `Cooldown (${a.cooldown_remaining_sec}s)` : (a.auth_ok ? 'Healthy & Active' : 'Auth Required')}</span>
         </div>
         <div class="meta-row">
-          <span>Requests: ${a.stats?.requests || 0}</span>
-          <span>Failovers: ${a.stats?.failovers || 0}</span>
+          <span>Requests: <strong>${reqs}</strong></span>
+          <span>Failovers: <strong>${a.stats?.failovers || 0}</strong></span>
         </div>
       </div>
-    `
+    `;
+        }
       )
       .join('')}
   </div>
 
   <div class="box">
     <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Interactive Playground</h2>
-    <textarea id="promptInput" placeholder="Enter a prompt to test multi-account pool routing (e.g. 'Write a fast binary search')..."></textarea>
-    <button onclick="sendPrompt()">Run Prompt</button>
+    <textarea id="promptInput" placeholder="Enter a prompt to test multi-account pool routing (e.g. 'Write a fast binary search in TypeScript')..."></textarea>
+    <div class="button-row">
+      <button id="runBtn" onclick="sendPrompt()">Run Prompt</button>
+      <span id="promptStatus" class="status-indicator"></span>
+    </div>
     <div id="resultBox"></div>
   </div>
 
   <div class="box" style="font-size: 0.85rem; color: var(--muted);">
-    <strong>Connecting from Cursor, Claude Code, or Codex:</strong><br>
-    Set OpenAI Base URL to: <code>http://127.0.0.1:${port}/v1</code> and API Key to any string. Requests will automatically route and fail over across healthy pool accounts.
+    <strong style="color: #f8fafc;">Connecting from Cursor, Claude Code, or Codex:</strong><br>
+    Set OpenAI Base URL to <code>http://127.0.0.1:${port}/v1</code> and API Key to any string. Requests will automatically route and fail over across healthy pool accounts.<br>
+    <div class="copy-pill" onclick="copyConfig()">📋 Copy Environment Variables</div>
   </div>
 
   <script>
+    function copyConfig() {
+      const text = "export OPENAI_BASE_URL=http://127.0.0.1:${port}/v1\\nexport OPENAI_API_KEY=grokbot";
+      navigator.clipboard.writeText(text);
+      alert('Copied to clipboard!\\n\\n' + text);
+    }
+
     async function sendPrompt() {
       const prompt = document.getElementById('promptInput').value.trim();
       const resBox = document.getElementById('resultBox');
+      const runBtn = document.getElementById('runBtn');
+      const statusSpan = document.getElementById('promptStatus');
       if (!prompt) return;
 
       resBox.style.display = 'block';
-      resBox.textContent = 'Routing prompt through grokbot pool...';
+      resBox.textContent = '';
+      runBtn.disabled = true;
+      statusSpan.textContent = '⚡ Routing prompt through grokbot pool...';
 
       try {
         const resp = await fetch('/v1/chat/completions', {
@@ -113,15 +151,44 @@ function getDashboardHtml(poolStatus, port) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'grok-3',
-            messages: [{ role: 'user', content: prompt }]
+            messages: [{ role: 'user', content: prompt }],
+            stream: true
           })
         });
-        const data = await resp.json();
-        const text = data.choices?.[0]?.message?.content || JSON.stringify(data, null, 2);
-        const meta = data._grok_meta ? ('[Served by: ' + data._grok_meta.account + ' (' + data._grok_meta.email + ')]\\n\\n') : '';
-        resBox.textContent = meta + text;
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          resBox.textContent = 'HTTP Error ' + resp.status + ': ' + errText;
+          return;
+        }
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let totalTokens = 0;
+        statusSpan.textContent = '🟢 Streaming tokens...';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+              try {
+                const json = JSON.parse(line.slice(6));
+                const delta = json.choices?.[0]?.delta?.content || '';
+                resBox.textContent += delta;
+                totalTokens++;
+              } catch (_) {}
+            }
+          }
+        }
+        statusSpan.textContent = '✅ Completed (~' + totalTokens + ' chunks streamed)';
       } catch (err) {
-        resBox.textContent = 'Error: ' + err.message;
+        resBox.textContent = 'Connection Error: ' + err.message;
+        statusSpan.textContent = '❌ Failed';
+      } finally {
+        runBtn.disabled = false;
       }
     }
   </script>

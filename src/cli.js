@@ -14,54 +14,82 @@ import { runDoctor } from './doctor.js';
 import { runMcpServer } from './mcp.js';
 
 export function renderVisualClusterMeter(statusList) {
+  const innerWidth = 76;
   const lines = [];
-  lines.push('┌' + '─'.repeat(78) + '┐');
-  lines.push('│ 🤖 GROKBOT CLUSTER STATUS & ORCHESTRATION PIPELINE' + ' '.repeat(28) + '│');
-  lines.push('├' + '─'.repeat(78) + '┤');
+  lines.push('┌' + '─'.repeat(innerWidth) + '┐');
+  
+  // Header: emoji 🤖 has display width 2
+  const headerText = '🤖 GROKBOT CLUSTER STATUS & ORCHESTRATION PIPELINE';
+  // 50 display cells
+  const headerPad = innerWidth - 50;
+  lines.push('│ ' + headerText + ' '.repeat(Math.max(0, headerPad - 2)) + ' │');
+  lines.push('├' + '─'.repeat(innerWidth) + '┤');
 
   for (const item of statusList) {
     const name = item.name.padEnd(8);
     const email = (item.email || 'N/A').padEnd(28);
-    const roles = `[${(item.roles || []).join(', ')}]`.padEnd(20);
-    const sym = item.auth_ok ? '🟢 ACTIVE  ' : (item.cooldown ? '⏳ COOLDOWN' : '🔴 OFFLINE ');
-    const requests = item.stats?.requests || 0;
-    const reqBarLen = Math.min(16, Math.max(1, requests % 16 || 4));
-    const bar = '█'.repeat(reqBarLen) + '░'.repeat(16 - reqBarLen);
+    const roles = `[${(item.roles || []).join(', ')}]`;
+    const line1Content = `${name} ${email} ${roles}`;
+    lines.push('│ ' + line1Content.padEnd(innerWidth - 2).slice(0, innerWidth - 2) + ' │');
 
-    lines.push(`│ ${name} ${email} ${roles} │`);
-    lines.push(`│ ${sym}  Load: [${bar}] (${requests} reqs) • Cooldown: ${item.cooldown_remaining_sec}s`.padEnd(79) + '│');
-    lines.push('│' + ' '.repeat(78) + '│');
+    const statusTag = item.auth_ok ? 'ACTIVE' : (item.cooldown ? 'COOLDOWN' : 'OFFLINE');
+    const statusIcon = item.auth_ok ? '●' : (item.cooldown ? '◐' : '○');
+    const requests = item.stats?.requests || 0;
+    const reqBarLen = requests === 0 ? 0 : Math.min(16, Math.max(1, requests));
+    const bar = '█'.repeat(reqBarLen) + '░'.repeat(16 - reqBarLen);
+    const cdText = item.cooldown ? `${item.cooldown_remaining_sec}s` : '0s';
+
+    const line2Content = `${statusIcon} ${statusTag.padEnd(9)} Load: [${bar}] (${requests} reqs) • Cooldown: ${cdText}`;
+    lines.push('│ ' + line2Content.padEnd(innerWidth - 2).slice(0, innerWidth - 2) + ' │');
+    lines.push('│' + ' '.repeat(innerWidth) + '│');
   }
 
   lines.pop(); // remove last empty line
-  lines.push('└' + '─'.repeat(78) + '┘');
+  lines.push('└' + '─'.repeat(innerWidth) + '┘');
   return lines.join('\n');
 }
 
 export function renderSvgClusterCard(statusList) {
-  const height = 100 + statusList.length * 60;
+  const height = 90 + statusList.length * 64;
   const cards = statusList
     .map((item, idx) => {
-      const y = 80 + idx * 56;
+      const y = 72 + idx * 60;
       const color = item.auth_ok ? '#10b981' : (item.cooldown ? '#f59e0b' : '#ef4444');
-      const statusText = item.cooldown ? `Cooldown (${item.cooldown_remaining_sec}s)` : (item.auth_ok ? 'Active' : 'Error');
+      const statusText = item.cooldown ? `Cooldown (${item.cooldown_remaining_sec}s)` : (item.auth_ok ? 'Healthy' : 'Error');
+      const reqs = item.stats?.requests || 0;
+      const barWidth = Math.min(60, reqs === 0 ? 6 : Math.max(12, reqs * 15));
+      
       return `
     <g transform="translate(20, ${y})">
-      <rect width="660" height="48" rx="6" fill="#131622" stroke="#232738" />
-      <circle cx="20" cy="24" r="5" fill="${color}" />
-      <text x="36" y="28" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">${item.name}</text>
-      <text x="120" y="28" font-family="-apple-system, sans-serif" font-size="12" fill="#94a3b8">${item.email || 'N/A'}</text>
-      <text x="360" y="28" font-family="-apple-system, sans-serif" font-size="11" fill="#64748b">[${(item.roles || []).join(', ')}]</text>
-      <text x="560" y="28" font-family="-apple-system, sans-serif" font-size="12" font-weight="600" fill="${color}">${statusText}</text>
+      <rect width="680" height="52" rx="8" fill="#111420" stroke="#212638" stroke-width="1.2" />
+      <circle cx="22" cy="26" r="6" fill="${color}" />
+      <text x="38" y="30" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">${item.name}</text>
+      <text x="110" y="30" font-family="-apple-system, sans-serif" font-size="12" fill="#94a3b8">${item.email || 'N/A'}</text>
+      <text x="330" y="30" font-family="-apple-system, sans-serif" font-size="11" fill="#38bdf8">[${(item.roles || []).join(', ')}]</text>
+      
+      <!-- Load Meter Bar -->
+      <text x="500" y="24" font-family="-apple-system, sans-serif" font-size="10" fill="#64748b">Load (${reqs})</text>
+      <rect x="500" y="28" width="60" height="6" rx="3" fill="#1e293b" />
+      <rect x="500" y="28" width="${barWidth}" height="6" rx="3" fill="${color}" />
+      
+      <!-- Status Badge -->
+      <rect x="590" y="16" width="76" height="20" rx="4" fill="${color}22" stroke="${color}55" />
+      <text x="628" y="30" font-family="-apple-system, sans-serif" font-size="11" font-weight="600" fill="${color}" text-anchor="middle">${statusText}</text>
     </g>`;
     })
     .join('');
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 ${height}" width="100%">
-  <rect width="700" height="${height}" rx="10" fill="#090a10" stroke="#1e2333" />
-  <text x="24" y="42" font-family="-apple-system, sans-serif" font-size="16" font-weight="800" fill="#f8fafc">🤖 grokbot Multi-Account Cluster</text>
-  <text x="520" y="42" font-family="-apple-system, sans-serif" font-size="12" fill="#64748b">${statusList.length} accounts configured</text>
-  <line x1="20" y1="58" x2="680" y2="58" stroke="#1e2333" />
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 ${height}" width="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0c14" />
+      <stop offset="100%" stop-color="#121624" />
+    </linearGradient>
+  </defs>
+  <rect width="720" height="${height}" rx="12" fill="url(#bgGrad)" stroke="#1e2333" stroke-width="1.5" />
+  <text x="24" y="40" font-family="-apple-system, sans-serif" font-size="16" font-weight="800" fill="#f8fafc">🤖 grokbot Multi-Account Cluster</text>
+  <text x="540" y="40" font-family="-apple-system, sans-serif" font-size="12" fill="#64748b">${statusList.length} Accounts Active • 0 Failed</text>
+  <line x1="20" y1="56" x2="700" y2="56" stroke="#1e2333" stroke-width="1" />
   ${cards}
 </svg>`;
 }
