@@ -414,6 +414,7 @@ export class GrokPoolRouter {
       const item = {
         name,
         email: profile.email || '',
+        uid: profile.uid || '',
         roles: profile.roles || ['general'],
         cooldown: inCd,
         cooldown_remaining_sec: rem,
