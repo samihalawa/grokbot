@@ -87,6 +87,15 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
     .chip-btn:hover { background: #cbd5e1; }
     .chip-btn.active { background: var(--gov-blue); color: #fff; border-color: var(--gov-dark-blue); }
 
+    /* Mobile Components (Hidden on Desktop) */
+    .drawer-toggle-btn { display: none; }
+    .sidebar-mobile-header { display: none; }
+    #sidebarBackdrop { display: none; }
+    .gov-meta-mobile { display: none; }
+    .mobile-back-bar { display: none; }
+    .footer-mobile { display: none; }
+    .footer-desktop { display: block; }
+
     /* Bot Master List (Email message rows) */
     .bot-list { flex: 1; overflow-y: auto; list-style: none; }
     .bot-item { padding: 0.55rem 0.75rem; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.1s; display: flex; flex-direction: column; gap: 0.2rem; user-select: none; }
@@ -150,12 +159,191 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
     /* Toast */
     #govToast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #0f172a; color: #fff; padding: 0.45rem 0.85rem; border-radius: 3px; font-size: 0.775rem; font-weight: 600; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 500; border-left: 4px solid #16a34a; }
 
-    @media (max-width: 900px) {
-      .split-container { flex-direction: column !important; }
-      .split-pane-left { width: 100% !important; max-width: 100% !important; height: 42% !important; }
-      .split-gutter { height: 6px !important; width: 100% !important; cursor: row-resize !important; }
-      .split-gutter::after { display: none; }
-      .split-pane-right { width: 100% !important; height: 58% !important; }
+    /* Responsive & Mobile First Adaptations */
+    @media (max-width: 800px) {
+      html, body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      .gov-banner { padding: 0.45rem 0.75rem; flex-wrap: nowrap; max-width: 100vw; overflow: hidden; }
+      .gov-brand { gap: 0.5rem; min-width: 0; }
+      .gov-seal { font-size: 1.25rem; flex-shrink: 0; }
+      .gov-title { font-size: 0.95rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .gov-title-sub, .gov-subtitle, .gov-meta-strip, .footer-desktop, .ribbon-proxy-box { display: none !important; }
+      
+      .drawer-toggle-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        color: #fff;
+        font-size: 1.15rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 3px;
+        cursor: pointer;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .drawer-toggle-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+      .gov-meta-mobile { display: flex !important; gap: 0.35rem; align-items: center; flex-shrink: 0; }
+
+      .action-ribbon { padding: 0.35rem 0.5rem; max-width: 100vw; overflow: hidden; }
+      .ribbon-btns {
+        overflow-x: auto;
+        white-space: nowrap;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100%;
+        padding-bottom: 2px;
+        gap: 0.35rem;
+      }
+      .ribbon-btns::-webkit-scrollbar { height: 3px; }
+      .ribbon-btns::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+      .ribbon-btns .gov-btn { flex-shrink: 0; font-size: 0.725rem; padding: 0.35rem 0.6rem; }
+
+      /* Off-Canvas Navigation Drawer */
+      .main-layout {
+        height: calc(100vh - 84px);
+        position: relative;
+        max-width: 100vw !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        overflow-x: hidden !important;
+      }
+      .content-area {
+        padding: 0.4rem 0.5rem;
+        flex: 1;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+      .tab-content {
+        min-width: 0 !important;
+        max-width: 100% !important;
+      }
+      .panel {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+      }
+      .panel-body {
+        overflow-x: auto !important;
+        max-width: 100% !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem;
+      }
+      .data-table {
+        min-width: 580px;
+      }
+
+      .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 285px !important;
+        max-width: 82vw !important;
+        z-index: 1000 !important;
+        background: #f1f5f9 !important;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.4) !important;
+        transform: translateX(-100%);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 0.75rem !important;
+      }
+      .sidebar.open { transform: translateX(0) !important; }
+      #sidebarBackdrop {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(15, 23, 42, 0.65) !important;
+        z-index: 999 !important;
+        display: none !important;
+        backdrop-filter: blur(2px);
+      }
+      #sidebarBackdrop.open { display: block !important; }
+      
+      .sidebar-mobile-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.65rem;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 0.75rem;
+      }
+      .drawer-close-btn {
+        background: #cbd5e1;
+        border: none;
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 0.25rem 0.6rem;
+        border-radius: 3px;
+        cursor: pointer;
+        color: #1e293b;
+      }
+
+      /* Mobile Master-Detail Drill Down for tab-bots */
+      #botsSplitContainer { border: none !important; min-width: 0 !important; max-width: 100% !important; }
+      #botsSplitContainer .split-gutter { display: none !important; }
+      
+      #botsSplitContainer:not(.mobile-show-detail) #botsListPane {
+        display: flex !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        border-right: none !important;
+      }
+      #botsSplitContainer:not(.mobile-show-detail) #botsDetailPane {
+        display: none !important;
+      }
+
+      #botsSplitContainer.mobile-show-detail #botsListPane {
+        display: none !important;
+      }
+      #botsSplitContainer.mobile-show-detail #botsDetailPane {
+        display: flex !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+      }
+
+      .mobile-back-bar {
+        display: flex !important;
+        background: #e2e8f0;
+        border-bottom: 1px solid var(--border);
+        padding: 0.4rem 0.65rem;
+      }
+      .mobile-back-btn {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: #ffffff;
+      }
+
+      /* Consola REPL on Mobile */
+      #consolaSplitContainer { flex-direction: column !important; overflow-y: auto !important; min-width: 0 !important; max-width: 100% !important; }
+      #consolaSplitContainer #consolaFormPane { width: 100% !important; max-width: 100% !important; min-width: 0 !important; height: auto !important; flex-shrink: 0 !important; }
+      #consolaSplitContainer #consolaSplitGutter { display: none !important; }
+      #consolaSplitContainer #consolaOutputPane { width: 100% !important; min-width: 0 !important; min-height: 320px !important; flex: 1 !important; }
+
+      .form-grid { grid-template-columns: 1fr !important; gap: 0.25rem !important; }
+      .form-label { text-align: left !important; }
+
+      .gov-footer {
+        padding: 0.35rem 0.75rem;
+        flex-direction: column;
+        gap: 0.2rem;
+        font-size: 0.675rem;
+        text-align: center;
+        max-width: 100vw;
+        overflow: hidden;
+      }
+      .footer-mobile { display: block !important; }
     }
   </style>
 </head>
@@ -163,28 +351,33 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
   <!-- Header Banner -->
   <div class="gov-banner">
     <div class="gov-brand">
+      <button id="sidebarToggleBtn" class="drawer-toggle-btn" onclick="toggleSidebarDrawer()" aria-label="Abrir Menú">☰</button>
       <div class="gov-seal">⚖️</div>
       <div>
-        <div class="gov-title">GROKBOT — SISTEMA DE ORQUESTACIÓN & PASARELA DE BOTS</div>
+        <div class="gov-title">GROKBOT <span class="gov-title-sub">— SISTEMA DE ORQUESTACIÓN & PASARELA DE BOTS</span></div>
         <div class="gov-subtitle">Infraestructura de Balanceo de Cuentas xAI & Automatización de Licitaciones</div>
       </div>
     </div>
     <div class="gov-meta-strip">
       <span>ESTADO: <strong>ACTIVO Y OPERATIVO</strong></span>
       <span>NÚMERO DE CUENTAS: <strong>${poolStatus.length}</strong></span>
-      <span>VERSIÓN: <strong>v1.3.0</strong></span>
+      <span>VERSIÓN: <strong>v1.3.1</strong></span>
+    </div>
+    <div class="gov-meta-mobile">
+      <span class="badge-ok" style="font-size:0.675rem; padding:0.15rem 0.4rem;">● ACTIVO (${poolStatus.length})</span>
+      <span class="badge-subtle" style="font-size:0.675rem; padding:0.15rem 0.4rem;">v1.3.1</span>
     </div>
   </div>
 
   <!-- Action Ribbon -->
   <div class="action-ribbon">
     <div class="ribbon-btns">
-      <button id="btn-tab-cuentas" class="gov-btn ${isCuentas ? 'gov-btn-primary' : ''}" onclick="showTab('tab-cuentas')">📋 01 - Cuentas & Cuotas</button>
-      <button id="btn-tab-bots" class="gov-btn ${isBots ? 'gov-btn-primary' : ''}" onclick="showTab('tab-bots')">🤖 02 - Pasarela de Bots (WebSocket)</button>
-      <button id="btn-tab-consola" class="gov-btn ${isConsola ? 'gov-btn-primary' : ''}" onclick="showTab('tab-consola')">⚡ 03 - Consola Interactiva</button>
-      <button id="btn-tab-integracion" class="gov-btn ${isIntegracion ? 'gov-btn-primary' : ''}" onclick="showTab('tab-integracion')">🔌 04 - Configuración Cursor / IDE</button>
+      <button id="btn-tab-cuentas" class="gov-btn ${isCuentas ? 'gov-btn-primary' : ''}" onclick="showTab('tab-cuentas'); closeSidebarDrawer();">📋 01 - Cuentas</button>
+      <button id="btn-tab-bots" class="gov-btn ${isBots ? 'gov-btn-primary' : ''}" onclick="showTab('tab-bots'); closeSidebarDrawer();">🤖 02 - Bots (WS)</button>
+      <button id="btn-tab-consola" class="gov-btn ${isConsola ? 'gov-btn-primary' : ''}" onclick="showTab('tab-consola'); closeSidebarDrawer();">⚡ 03 - Consola</button>
+      <button id="btn-tab-integracion" class="gov-btn ${isIntegracion ? 'gov-btn-primary' : ''}" onclick="showTab('tab-integracion'); closeSidebarDrawer();">🔌 04 - Cursor / IDE</button>
     </div>
-    <div>
+    <div class="ribbon-proxy-box">
       <span style="font-family:var(--mono); font-size:0.75rem; color:#475569; margin-right:0.5rem;">
         Proxy OpenAI: <strong>http://127.0.0.1:${port}/v1</strong>
       </span>
@@ -194,14 +387,22 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
 
   <!-- Main Body -->
   <div class="main-layout">
-    <!-- Left Navigation Sidebar -->
-    <div class="sidebar">
+    <!-- Off-Canvas Sidebar Backdrop -->
+    <div id="sidebarBackdrop" onclick="closeSidebarDrawer()"></div>
+
+    <!-- Left Navigation Sidebar (Responsive Drawer on Mobile) -->
+    <div class="sidebar" id="appSidebar">
+      <div class="sidebar-mobile-header">
+        <div style="font-weight:700; font-size:0.8rem; color:var(--gov-dark-blue); text-transform:uppercase; letter-spacing:0.04em;">Navegación Institucional</div>
+        <button class="drawer-close-btn" onclick="closeSidebarDrawer()" aria-label="Cerrar Menú">✕</button>
+      </div>
+
       <div class="sidebar-section-title">▼ Nodos de Ejecución</div>
       <ul class="sidebar-menu">
         ${poolStatus
           .map(
             (a) => `
-          <li class="sidebar-item" onclick="showTab('tab-cuentas')">
+          <li class="sidebar-item" onclick="showTab('tab-cuentas'); closeSidebarDrawer();">
             <span>● ${a.name}</span>
             <span style="font-family:var(--mono); font-size:0.7rem; color:${a.cooldown ? '#b45309' : '#15803d'};">
               ${a.cooldown ? 'COOLDOWN' : 'OK'}
@@ -214,9 +415,9 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
 
       <div class="sidebar-section-title">▼ Operaciones Rápidas</div>
       <ul class="sidebar-menu">
-        <li class="sidebar-item" onclick="showTab('tab-consola')">▶ Ejecutar Instrucción</li>
-        <li class="sidebar-item" onclick="showTab('tab-bots'); refreshBots();">▶ Sincronizar Roster Bots</li>
-        <li class="sidebar-item" onclick="clearAllCooldowns()">▶ Limpiar Cooldowns (Reset)</li>
+        <li class="sidebar-item" onclick="showTab('tab-consola'); closeSidebarDrawer();">▶ Ejecutar Instrucción</li>
+        <li class="sidebar-item" onclick="showTab('tab-bots'); refreshBots(); closeSidebarDrawer();">▶ Sincronizar Roster Bots</li>
+        <li class="sidebar-item" onclick="clearAllCooldowns(); closeSidebarDrawer();">▶ Limpiar Cooldowns (Reset)</li>
       </ul>
 
       <div style="margin-top:1.5rem; padding:0.5rem; background:#cbd5e1; border-radius:2px; font-size:0.7rem; color:#334155; line-height:1.4;">
@@ -292,7 +493,7 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
         <div class="panel">
           <div class="panel-header">Parámetros del Sistema y Despliegue Local</div>
           <div class="panel-body">
-            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; font-size:0.8rem;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.75rem; font-size:0.8rem;">
               <div style="background:#f8fafc; border:1px solid var(--border); padding:0.6rem; border-radius:2px;">
                 <div style="font-size:0.7rem; color:#64748b; font-weight:700;">PUERTO LOCAL PROXY</div>
                 <div style="font-family:var(--mono); font-size:1rem; font-weight:700; color:var(--gov-dark-blue);">${port}</div>
@@ -338,6 +539,13 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
 
           <!-- Right Detail Pane: Live Inspector & Direct Prompt -->
           <div class="split-pane-right" id="botsDetailPane">
+            <!-- Mobile Drill-Down Back Button -->
+            <div class="mobile-back-bar">
+              <button class="gov-btn mobile-back-btn" onclick="backToBotsList()">
+                ← Volver al Listado de Agentes
+              </button>
+            </div>
+
             <div id="botDetailEmpty" class="empty-state">
               <div style="font-size:2rem; margin-bottom:0.5rem;">🤖</div>
               <div style="font-weight:700; color:var(--gov-dark-blue);">Seleccione un agente del panel izquierdo</div>
@@ -346,11 +554,11 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
             <div id="botDetailContent" style="display:none; height:100%; flex-direction:column;">
               <div class="detail-header">
                 <div>
-                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                     <span id="detailBotName" style="font-size:0.95rem; font-weight:700; color:var(--gov-dark-blue);"></span>
                     <span id="detailBotStatus" class="badge-ok">activo</span>
                   </div>
-                  <div style="font-family:var(--mono); font-size:0.725rem; color:#64748b; margin-top:0.2rem; display:flex; gap:0.5rem; align-items:center;">
+                  <div style="font-family:var(--mono); font-size:0.725rem; color:#64748b; margin-top:0.2rem; display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
                     <span>Cuenta: <strong id="detailBotAccount"></strong></span>
                     <span>•</span>
                     <span>ID: <code id="detailBotId"></code></span>
@@ -358,7 +566,7 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
                   </div>
                 </div>
                 <div style="display:flex; gap:0.35rem;">
-                  <button class="gov-btn" onclick="reloadCurrentBotTail()">🔄 Actualizar Turnos</button>
+                  <button class="gov-btn" onclick="reloadCurrentBotTail()">🔄 Turnos</button>
                 </div>
               </div>
               <div class="detail-transcript" id="detailTranscript"></div>
@@ -458,17 +666,39 @@ export OPENAI_MODEL="grok-3"</pre>
 
   <!-- Bottom Institutional Status Bar -->
   <div class="gov-footer">
-    <div>
+    <div class="footer-desktop">
       Directorio de configuración: <strong>~/.config/grok-bot/config.json</strong> | Socket de Bots: <strong>wss://grok.com/ws/bot</strong>
     </div>
-    <div>
-      Modo: <strong>Sin Dependencias Externas (Node.js Nativo)</strong> | Clúster: <strong>4 Nodos Operativos</strong>
+    <div class="footer-desktop">
+      Modo: <strong>Sin Dependencias Externas (Node.js Nativo)</strong> | Clúster: <strong>${poolStatus.length} Nodos Operativos</strong>
+    </div>
+    <div class="footer-mobile">
+      ⚖️ <strong>GROKBOT v1.3.1</strong> · Clúster ${poolStatus.length} Nodos Operativos · Node.js Nativo
     </div>
   </div>
 
   <div id="govToast">Acción realizada correctamente</div>
 
   <script>
+    function toggleSidebarDrawer() {
+      const sb = document.getElementById('appSidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (sb) sb.classList.toggle('open');
+      if (bd) bd.classList.toggle('open');
+    }
+
+    function closeSidebarDrawer() {
+      const sb = document.getElementById('appSidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      if (sb) sb.classList.remove('open');
+      if (bd) bd.classList.remove('open');
+    }
+
+    function backToBotsList() {
+      const sc = document.getElementById('botsSplitContainer');
+      if (sc) sc.classList.remove('mobile-show-detail');
+    }
+
     function showToast(msg) {
       const t = document.getElementById('govToast');
       if (!t) return;
@@ -479,6 +709,7 @@ export OPENAI_MODEL="grok-3"</pre>
     }
 
     function showTab(tabId) {
+      closeSidebarDrawer();
       if (!tabId.startsWith('tab-')) tabId = 'tab-' + tabId;
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.ribbon-btns .gov-btn').forEach(btn => btn.classList.remove('gov-btn-primary'));
@@ -579,6 +810,11 @@ export OPENAI_MODEL="grok-3"</pre>
       statusSpan.textContent = 'Enrutando petición en el clúster...';
       outputDiv.innerHTML = '<span style="color:#64748b;">Recibiendo flujo de tokens (SSE)...</span>';
       currentRawResponse = '';
+
+      if (window.innerWidth <= 800) {
+        const outPane = document.getElementById('consolaOutputPane');
+        if (outPane) outPane.scrollIntoView({ behavior: 'smooth' });
+      }
 
       const t0 = performance.now();
 
@@ -817,6 +1053,11 @@ export OPENAI_MODEL="grok-3"</pre>
       const detailContent = document.getElementById('botDetailContent');
       detailContent.style.display = 'flex';
 
+      if (window.innerWidth <= 800) {
+        const sc = document.getElementById('botsSplitContainer');
+        if (sc) sc.classList.add('mobile-show-detail');
+      }
+
       document.getElementById('detailBotName').textContent = bot.name;
       document.getElementById('detailBotAccount').textContent = bot.account;
       document.getElementById('detailBotId').textContent = bot.agentId;
@@ -1053,7 +1294,9 @@ export function createServer(router = null, port = 8000) {
 
     // POST/GET /api/pool/reset (Clear cooldowns)
     if (pathname === '/api/pool/reset') {
-      routerInstance.cooldowns.clear();
+      if (typeof routerInstance.clearCooldown === 'function') {
+        routerInstance.clearCooldown();
+      }
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, message: 'All cooldowns reset' }));
       return;

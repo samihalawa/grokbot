@@ -21,6 +21,20 @@ test('Server: returns OpenAI models list and health status', async () => {
     assert.equal(respHealth.status, 200);
     const healthData = await respHealth.json();
     assert.equal(healthData.status, 'ok');
+
+    // 3. POST /api/pool/reset
+    const respReset = await fetch(`${baseUrl}/api/pool/reset`, { method: 'POST' });
+    assert.equal(respReset.status, 200);
+    const resetData = await respReset.json();
+    assert.equal(resetData.ok, true);
+
+    // 4. GET / (Dashboard HTML)
+    const respDash = await fetch(`${baseUrl}/`);
+    assert.equal(respDash.status, 200);
+    const dashHtml = await respDash.text();
+    assert.ok(dashHtml.includes('GROKBOT'));
+    assert.ok(dashHtml.includes('drawer-toggle-btn'));
+    assert.ok(dashHtml.includes('mobile-back-btn'));
   } finally {
     server.close();
   }
