@@ -1,0 +1,32 @@
+{
+  "strategy": "round-robin",
+  "auto_failover": true,
+  "default_account": "primary",
+  "accounts": {
+    "primary": {
+      "name": "primary",
+      "sso": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "email": "user@example.com",
+      "roles": ["general", "coding"],
+      "model_preference": "grok-3",
+      "cooldown_seconds": 900
+    },
+    "deepsearch-worker": {
+      "name": "deepsearch-worker",
+      "sso": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "email": "worker2@example.com",
+      "roles": ["deepsearch", "research"],
+      "model_preference": "grok-3-deepsearch",
+      "cooldown_seconds": 900
+    },
+    "dynamic-1password-account": {
+      "name": "dynamic-1password-account",
+      "email": "secure-vault@example.com",
+      "op_id": "op_item_id_here",
+      "op_vault": "Personal",
+      "roles": ["filing", "legal", "general"],
+      "model_preference": "grok-3",
+      "cooldown_seconds": 900
+    }
+  }
+}

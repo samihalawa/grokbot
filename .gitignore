@@ -1,0 +1,12 @@
+node_modules/
+.npmrc
+.DS_Store
+*.log
+*.txt
+*.jsonl
+!examples/**/*.json
+!examples/**/*.jsonl
+pool_state.json
+dist/
+coverage/
+.env
