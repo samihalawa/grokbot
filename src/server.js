@@ -41,10 +41,11 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
       --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.4; display: flex; flex-direction: column; min-height: 100vh; }
+    html, body { height: 100%; overflow: hidden; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.4; display: flex; flex-direction: column; }
 
     /* Top Institutional Header */
-    .gov-banner { background: var(--gov-blue); color: #fff; padding: 0.6rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ffcc00; }
+    .gov-banner { background: var(--gov-blue); color: #fff; padding: 0.55rem 1.25rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ffcc00; flex-shrink: 0; }
     .gov-brand { display: flex; align-items: center; gap: 0.75rem; }
     .gov-seal { font-size: 1.4rem; line-height: 1; }
     .gov-title { font-size: 1.15rem; font-weight: 700; letter-spacing: 0.02em; }
@@ -53,69 +54,109 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
     .gov-meta-strip span strong { color: #ffeb3b; }
 
     /* Action Ribbon */
-    .action-ribbon { background: #dbe3ef; border-bottom: 1px solid var(--border); padding: 0.4rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .action-ribbon { background: #dbe3ef; border-bottom: 1px solid var(--border); padding: 0.35rem 1.25rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0; }
     .ribbon-btns { display: flex; gap: 0.4rem; }
-    .gov-btn { background: #f8fafc; border: 1px solid var(--border-dark); color: #1e293b; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; font-family: inherit; cursor: pointer; border-radius: 3px; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+    .gov-btn { background: #f8fafc; border: 1px solid var(--border-dark); color: #1e293b; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 600; font-family: inherit; cursor: pointer; border-radius: 3px; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(0,0,0,0.06); user-select: none; }
     .gov-btn:hover { background: #e2e8f0; }
     .gov-btn-primary { background: var(--gov-btn-blue); color: #fff; border-color: var(--gov-dark-blue); }
     .gov-btn-primary:hover { background: var(--gov-btn-hover); }
 
     /* Layout: Left Sidebar + Main Content */
-    .main-layout { display: flex; flex: 1; }
-    .sidebar { width: 230px; background: #e2e8f0; border-right: 1px solid var(--border); padding: 0.75rem 0.5rem; flex-shrink: 0; }
-    .sidebar-section-title { font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; padding: 0.4rem 0.5rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer; }
-    .sidebar-menu { list-style: none; margin-bottom: 0.5rem; }
-    .sidebar-item { padding: 0.4rem 0.6rem; font-size: 0.8rem; color: #1e293b; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.15rem; font-weight: 500; }
+    .main-layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 82px); }
+    .sidebar { width: 220px; background: #e2e8f0; border-right: 1px solid var(--border); padding: 0.65rem 0.5rem; flex-shrink: 0; overflow-y: auto; display: flex; flex-direction: column; }
+    .sidebar-section-title { font-size: 0.75rem; font-weight: 700; color: #334155; text-transform: uppercase; padding: 0.4rem 0.5rem; margin-top: 0.4rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer; }
+    .sidebar-menu { list-style: none; margin-bottom: 0.4rem; }
+    .sidebar-item { padding: 0.4rem 0.6rem; font-size: 0.8rem; color: #1e293b; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.15rem; font-weight: 500; user-select: none; }
     .sidebar-item:hover { background: #cbd5e1; }
     .sidebar-item.active { background: var(--gov-blue); color: #fff; font-weight: 600; }
 
-    .content-area { flex: 1; padding: 1.25rem 1.5rem; overflow-y: auto; }
+    .content-area { flex: 1; padding: 0.65rem 0.85rem; overflow: hidden; display: flex; flex-direction: column; }
+
+    /* Master-Detail Vertical Split (Email Client Style: Master - Gutter - Detail) */
+    .split-container { display: flex; flex: 1; height: 100%; overflow: hidden; background: #fff; border: 1px solid var(--border); border-radius: 2px; }
+    .split-pane-left { flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; background: #f8fafc; border-right: none; }
+    .split-gutter { width: 6px; background: #cbd5e1; cursor: col-resize; flex-shrink: 0; position: relative; transition: background 0.1s; user-select: none; }
+    .split-gutter:hover, .split-gutter.dragging { background: var(--gov-accent); }
+    .split-gutter::after { content: ''; position: absolute; top: 50%; left: 1px; transform: translateY(-50%); width: 4px; height: 32px; border-left: 1px dotted #64748b; border-right: 1px dotted #64748b; }
+    .split-pane-right { flex: 1; min-width: 320px; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+
+    /* Pane Toolbar & Search */
+    .pane-toolbar { padding: 0.5rem 0.65rem; background: #f1f4f9; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0; }
+    .filter-chips { display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap; }
+    .chip-btn { background: #e2e8f0; border: 1px solid #cbd5e1; color: #334155; padding: 0.15rem 0.45rem; font-size: 0.7rem; font-weight: 600; border-radius: 2px; cursor: pointer; user-select: none; }
+    .chip-btn:hover { background: #cbd5e1; }
+    .chip-btn.active { background: var(--gov-blue); color: #fff; border-color: var(--gov-dark-blue); }
+
+    /* Bot Master List (Email message rows) */
+    .bot-list { flex: 1; overflow-y: auto; list-style: none; }
+    .bot-item { padding: 0.55rem 0.75rem; border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: background 0.1s; display: flex; flex-direction: column; gap: 0.2rem; user-select: none; }
+    .bot-item:hover { background: #edf2f7; }
+    .bot-item.selected { background: #e0e7ff; border-left: 4px solid var(--gov-blue); padding-left: calc(0.75rem - 4px); }
+    .bot-item-top { display: flex; justify-content: space-between; align-items: center; }
+    .bot-item-name { font-weight: 700; font-size: 0.825rem; color: var(--gov-dark-blue); word-break: break-word; }
+    .bot-item-meta { font-family: var(--mono); font-size: 0.7rem; color: #64748b; display: flex; justify-content: space-between; align-items: center; }
+    .acct-pill { background: #e2e8f0; border: 1px solid #cbd5e1; color: #1e293b; padding: 0.05rem 0.35rem; font-family: var(--mono); font-size: 0.675rem; font-weight: 700; border-radius: 2px; }
+
+    /* Detail Inspector (Email Detail View) */
+    .detail-header { padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
+    .detail-transcript { flex: 1; padding: 0.75rem 0.85rem; overflow-y: auto; font-family: var(--mono); font-size: 0.8rem; line-height: 1.5; white-space: pre-wrap; background: #ffffff; color: #0f172a; }
+    .detail-prompt-bar { padding: 0.5rem 0.85rem; background: #f1f4f9; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #64748b; padding: 2rem; text-align: center; }
 
     /* Utilitarian Data Panel */
-    .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 2px; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .panel-header { background: var(--panel-header); border-bottom: 1px solid var(--border); padding: 0.5rem 0.85rem; font-weight: 700; font-size: 0.825rem; color: var(--gov-dark-blue); text-transform: uppercase; letter-spacing: 0.03em; display: flex; justify-content: space-between; align-items: center; }
-    .panel-body { padding: 0.85rem; }
+    .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 2px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .panel-header { background: var(--panel-header); border-bottom: 1px solid var(--border); padding: 0.45rem 0.8rem; font-weight: 700; font-size: 0.8rem; color: var(--gov-dark-blue); text-transform: uppercase; letter-spacing: 0.03em; display: flex; justify-content: space-between; align-items: center; }
+    .panel-body { padding: 0.75rem; }
 
     /* Industrial Data Tables */
     .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; background: #fff; }
-    .data-table th { background: #f1f4f9; border: 1px solid var(--border); padding: 0.5rem 0.65rem; text-align: left; font-weight: 700; color: #334155; font-size: 0.75rem; text-transform: uppercase; }
-    .data-table td { border: 1px solid var(--border); padding: 0.5rem 0.65rem; color: #0f172a; }
+    .data-table th { background: #f1f4f9; border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: left; font-weight: 700; color: #334155; font-size: 0.725rem; text-transform: uppercase; }
+    .data-table td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; color: #0f172a; }
     .data-table tr:nth-child(even) td { background: #f8fafc; }
     .data-table tr:hover td { background: #edf2f7; }
 
     /* Badges & Meters */
-    .badge-ok { background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 2px; font-family: var(--mono); font-size: 0.725rem; }
-    .badge-cooldown { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 2px; font-family: var(--mono); font-size: 0.725rem; }
-    .badge-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 2px; font-family: var(--mono); font-size: 0.725rem; }
-    .role-chip { display: inline-block; background: #e2e8f0; border: 1px solid #cbd5e1; color: #334155; padding: 0.1rem 0.35rem; border-radius: 2px; font-family: var(--mono); font-size: 0.7rem; margin-right: 0.25rem; font-weight: 600; }
+    .badge-ok { background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 2px; font-family: var(--mono); font-size: 0.7rem; }
+    .badge-subtle { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 2px; font-family: var(--mono); font-size: 0.7rem; }
+    .badge-cooldown { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 2px; font-family: var(--mono); font-size: 0.7rem; }
+    .badge-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 2px; font-family: var(--mono); font-size: 0.7rem; }
+    .role-chip { display: inline-block; background: #e2e8f0; border: 1px solid #cbd5e1; color: #334155; padding: 0.1rem 0.35rem; border-radius: 2px; font-family: var(--mono); font-size: 0.675rem; margin-right: 0.25rem; font-weight: 600; }
     
-    .table-load-bar { background: #e2e8f0; height: 10px; width: 100%; border: 1px solid #cbd5e1; border-radius: 1px; overflow: hidden; display: flex; }
+    .table-load-bar { background: #e2e8f0; height: 8px; width: 100%; border: 1px solid #cbd5e1; border-radius: 1px; overflow: hidden; display: flex; }
     .table-load-fill { background: #16a34a; height: 100%; }
 
     /* Form Inputs */
-    .form-grid { display: grid; grid-template-columns: 140px 1fr; gap: 0.6rem; align-items: center; margin-bottom: 0.85rem; }
-    .form-label { font-weight: 600; font-size: 0.8rem; color: #334155; text-align: right; }
-    .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid #94a3b8; background: #fff; padding: 0.35rem 0.5rem; font-family: inherit; font-size: 0.825rem; color: #0f172a; border-radius: 2px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06); }
+    .form-grid { display: grid; grid-template-columns: 120px 1fr; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
+    .form-label { font-weight: 600; font-size: 0.775rem; color: #334155; text-align: right; }
+    .form-input, .form-select, .form-textarea { width: 100%; border: 1px solid #94a3b8; background: #fff; padding: 0.35rem 0.5rem; font-family: inherit; font-size: 0.8rem; color: #0f172a; border-radius: 2px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.06); }
     .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gov-accent); outline: 1px solid var(--gov-accent); }
-    .form-textarea { min-height: 90px; resize: vertical; font-family: var(--mono); line-height: 1.4; }
+    .form-textarea { min-height: 80px; resize: vertical; font-family: var(--mono); line-height: 1.4; }
 
     /* Response Output Box (Authentic Paper/Code View) */
-    .output-panel { background: #ffffff; border: 1px solid #94a3b8; border-radius: 2px; padding: 0.85rem; min-height: 120px; max-height: 480px; overflow-y: auto; font-family: var(--mono); font-size: 0.825rem; line-height: 1.5; color: #0f172a; }
+    .output-panel { background: #ffffff; border: 1px solid #94a3b8; border-radius: 2px; padding: 0.75rem; overflow-y: auto; font-family: var(--mono); font-size: 0.8rem; line-height: 1.5; color: #0f172a; }
     .output-panel h1, .output-panel h2, .output-panel h3 { color: var(--gov-dark-blue); margin-top: 0.5rem; margin-bottom: 0.4rem; }
-    .output-panel p { margin-bottom: 0.6rem; }
-    .output-panel ul { margin-left: 1.25rem; margin-bottom: 0.6rem; }
-    .output-panel pre { background: #f1f4f9; border: 1px solid #cbd5e1; padding: 0.6rem; border-radius: 2px; margin-bottom: 0.6rem; overflow-x: auto; color: #0f172a; }
+    .output-panel p { margin-bottom: 0.5rem; }
+    .output-panel ul { margin-left: 1.25rem; margin-bottom: 0.5rem; }
+    .output-panel pre { background: #f1f4f9; border: 1px solid #cbd5e1; padding: 0.5rem; border-radius: 2px; margin-bottom: 0.5rem; overflow-x: auto; color: #0f172a; }
     .output-panel code { background: #e2e8f0; padding: 0.1rem 0.3rem; border-radius: 2px; color: #0f172a; }
 
     /* Bottom Status Bar */
-    .gov-footer { background: #dbe3ef; border-top: 1px solid var(--border); padding: 0.4rem 1.25rem; font-family: var(--mono); font-size: 0.75rem; color: #334155; display: flex; justify-content: space-between; align-items: center; }
+    .gov-footer { background: #dbe3ef; border-top: 1px solid var(--border); padding: 0.35rem 1.25rem; font-family: var(--mono); font-size: 0.725rem; color: #334155; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
 
     /* Tab Switcher Logic */
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content { display: none; height: 100%; flex-direction: column; overflow: hidden; }
+    .tab-content.active { display: flex; }
 
     /* Toast */
     #govToast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #0f172a; color: #fff; padding: 0.45rem 0.85rem; border-radius: 3px; font-size: 0.775rem; font-weight: 600; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 500; border-left: 4px solid #16a34a; }
+
+    @media (max-width: 900px) {
+      .split-container { flex-direction: column !important; }
+      .split-pane-left { width: 100% !important; max-width: 100% !important; height: 42% !important; }
+      .split-gutter { height: 6px !important; width: 100% !important; cursor: row-resize !important; }
+      .split-gutter::after { display: none; }
+      .split-pane-right { width: 100% !important; height: 58% !important; }
+    }
   </style>
 </head>
 <body>
@@ -131,7 +172,7 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
     <div class="gov-meta-strip">
       <span>ESTADO: <strong>ACTIVO Y OPERATIVO</strong></span>
       <span>NÚMERO DE CUENTAS: <strong>${poolStatus.length}</strong></span>
-      <span>VERSIÓN: <strong>v1.2.3</strong></span>
+      <span>VERSIÓN: <strong>v1.3.0</strong></span>
     </div>
   </div>
 
@@ -269,55 +310,87 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
         </div>
       </div>
 
-      <!-- TAB 2: Pasarela de Bots WebSocket -->
+      <!-- TAB 2: Pasarela de Bots WebSocket (Split View: Email Client Master-Detail) -->
       <div id="tab-bots" class="tab-content ${isBots ? 'active' : ''}">
-        <div class="panel">
-          <div class="panel-header">
-            <span>Roster de Agentes y Bots Registrados en Cuentas (Conexión Directa WebSocket)</span>
-            <button class="gov-btn" onclick="refreshBots()">Actualizar Roster</button>
-          </div>
-          <div class="panel-body">
-            <div id="botsContainer">
+        <div class="split-container" id="botsSplitContainer">
+          <!-- Left Master Pane: Bot List -->
+          <div class="split-pane-left" id="botsListPane" style="width: 440px; min-width: 280px; max-width: 65%;">
+            <div class="pane-toolbar">
+              <input type="text" id="botsSearchInput" class="form-input" placeholder="🔍 Filtrar agentes por nombre, cuenta o ID..." oninput="filterBotsList()">
+              <div class="filter-chips">
+                <button class="chip-btn active" id="chip-all" onclick="filterByAccount('')">Todos (<span id="botsTotalCount">0</span>)</button>
+                <button class="chip-btn" id="chip-hao" onclick="filterByAccount('hao')">hao</button>
+                <button class="chip-btn" id="chip-sami" onclick="filterByAccount('sami')">sami</button>
+                <button class="chip-btn" id="chip-h999" onclick="filterByAccount('h999')">h999</button>
+                <button class="chip-btn" id="chip-oulang" onclick="filterByAccount('oulang')">oulang</button>
+                <button class="gov-btn" style="margin-left:auto; padding:0.15rem 0.45rem; font-size:0.7rem;" onclick="refreshBots()">🔄 Refrescar</button>
+              </div>
+            </div>
+            <div class="bot-list" id="botsList">
               <div style="padding:1.5rem; text-align:center; font-family:var(--mono); color:#64748b;">
-                Haga clic en «Actualizar Roster» o seleccione una cuenta para consultar los bots registrados vía WebSocket nativo.
+                Cargando roster de agentes vía WebSocket...
+              </div>
+            </div>
+          </div>
+
+          <!-- Draggable Gutter Resizer -->
+          <div class="split-gutter" id="botsSplitGutter" title="Arrastrar para redimensionar los paneles"></div>
+
+          <!-- Right Detail Pane: Live Inspector & Direct Prompt -->
+          <div class="split-pane-right" id="botsDetailPane">
+            <div id="botDetailEmpty" class="empty-state">
+              <div style="font-size:2rem; margin-bottom:0.5rem;">🤖</div>
+              <div style="font-weight:700; color:var(--gov-dark-blue);">Seleccione un agente del panel izquierdo</div>
+              <div style="font-size:0.75rem; color:#64748b; margin-top:0.25rem;">Haga clic en cualquier agente o use las flechas ↑ / ↓ del teclado para inspeccionar turnos en vivo.</div>
+            </div>
+            <div id="botDetailContent" style="display:none; height:100%; flex-direction:column;">
+              <div class="detail-header">
+                <div>
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span id="detailBotName" style="font-size:0.95rem; font-weight:700; color:var(--gov-dark-blue);"></span>
+                    <span id="detailBotStatus" class="badge-ok">activo</span>
+                  </div>
+                  <div style="font-family:var(--mono); font-size:0.725rem; color:#64748b; margin-top:0.2rem; display:flex; gap:0.5rem; align-items:center;">
+                    <span>Cuenta: <strong id="detailBotAccount"></strong></span>
+                    <span>•</span>
+                    <span>ID: <code id="detailBotId"></code></span>
+                    <button class="gov-btn" style="padding:0.1rem 0.35rem; font-size:0.675rem;" onclick="copyDetailBotId()">Copiar ID</button>
+                  </div>
+                </div>
+                <div style="display:flex; gap:0.35rem;">
+                  <button class="gov-btn" onclick="reloadCurrentBotTail()">🔄 Actualizar Turnos</button>
+                </div>
+              </div>
+              <div class="detail-transcript" id="detailTranscript"></div>
+              <div class="detail-prompt-bar">
+                <input type="text" id="detailPromptInput" class="form-input" placeholder="Enviar instrucción directa a este agente (Enter para enviar)..." onkeydown="if(event.key==='Enter') sendPromptToSelectedBot()">
+                <button id="detailSendBtn" class="gov-btn gov-btn-primary" onclick="sendPromptToSelectedBot()">▶ Enviar</button>
               </div>
             </div>
           </div>
         </div>
-
-        <div id="tailInspector" class="panel" style="display:none;">
-          <div class="panel-header">
-            <span id="tailInspectorTitle">Historial de Turnos del Agente</span>
-            <button class="gov-btn" onclick="closeTailInspector()">Cerrar</button>
-          </div>
-          <div class="panel-body">
-            <div id="tailEntries" class="output-panel" style="max-height:360px;"></div>
-          </div>
-        </div>
       </div>
 
-      <!-- TAB 3: Consola Interactiva REPL -->
+      <!-- TAB 3: Consola Interactiva REPL (Split View) -->
       <div id="tab-consola" class="tab-content ${isConsola ? 'active' : ''}">
-        <div class="panel">
-          <div class="panel-header">
-            <span>Consola de Ejecución & Envío de Peticiones</span>
-            <span style="font-family:var(--mono); font-size:0.75rem;">Endpoint: /v1/chat/completions</span>
-          </div>
-          <div class="panel-body">
-            <div class="form-grid">
-              <div class="form-label">Modelo xAI:</div>
-              <div>
-                <select id="replModel" class="form-select" style="max-width:280px;">
+        <div class="split-container" id="consolaSplitContainer">
+          <!-- Left Pane: Form Controls -->
+          <div class="split-pane-left" id="consolaFormPane" style="width: 460px; min-width: 320px; max-width: 65%;">
+            <div class="panel-header" style="flex-shrink:0;">
+              <span>Consola de Ejecución Grok</span>
+              <span style="font-family:var(--mono); font-size:0.7rem;">POST /v1/chat/completions</span>
+            </div>
+            <div style="padding:0.85rem; flex:1; display:flex; flex-direction:column; gap:0.75rem; overflow-y:auto;">
+              <div class="form-grid">
+                <div class="form-label">Modelo xAI:</div>
+                <select id="replModel" class="form-select">
                   <option value="grok-3" selected>grok-3 (Recomendado)</option>
                   <option value="grok-3-deepsearch">grok-3-deepsearch (Búsqueda profunda)</option>
                   <option value="grok-3-think">grok-3-think (Razonamiento)</option>
                   <option value="grok-2">grok-2</option>
                 </select>
-              </div>
-
-              <div class="form-label">Enrutamiento:</div>
-              <div>
-                <select id="replRole" class="form-select" style="max-width:280px;">
+                <div class="form-label">Enrutamiento:</div>
+                <select id="replRole" class="form-select">
                   <option value="" selected>Automático (según palabras clave)</option>
                   <option value="coding">coding (Desarrollo, TypeScript, Python)</option>
                   <option value="filing">filing (Licitaciones, PLACSP, Documentación)</option>
@@ -325,29 +398,31 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
                   <option value="legal">legal (Pliegos, Cláusulas, Ley de Contratos)</option>
                 </select>
               </div>
-
-              <div class="form-label">Instrucción:</div>
-              <div>
-                <textarea id="replPrompt" class="form-textarea" placeholder="Escriba la consulta o tarea a procesar a través del clúster Grok (Ctrl+Enter para enviar)..."></textarea>
+              <div style="flex:1; display:flex; flex-direction:column;">
+                <div style="font-weight:600; font-size:0.75rem; color:#334155; margin-bottom:0.25rem;">Instrucción (Ctrl+Enter para enviar):</div>
+                <textarea id="replPrompt" class="form-textarea" style="flex:1; min-height:160px;" placeholder="Escriba la consulta o tarea a procesar a través del clúster Grok..."></textarea>
               </div>
-
-              <div></div>
-              <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
                 <div style="display:flex; gap:0.5rem; align-items:center;">
                   <button id="sendBtn" class="gov-btn gov-btn-primary" onclick="submitReplPrompt()">▶ Enviar Petición</button>
-                  <span id="replStatus" style="font-family:var(--mono); font-size:0.75rem; color:#64748b;"></span>
+                  <span id="replStatus" style="font-family:var(--mono); font-size:0.725rem; color:#64748b;"></span>
                 </div>
                 <button class="gov-btn" onclick="clearReplOutput()">Limpiar</button>
               </div>
             </div>
+          </div>
 
-            <!-- Output Screen -->
-            <div style="margin-top:0.75rem;">
-              <div style="font-size:0.75rem; font-weight:700; color:#334155; margin-bottom:0.35rem; display:flex; justify-content:space-between;">
-                <span>RESPUESTA RECIBIDA (Streaming en Vivo):</span>
-                <span id="metaTokens" style="font-family:var(--mono); color:#16a34a;"></span>
-              </div>
-              <div id="replOutput" class="output-panel">Esperando envío de petición...</div>
+          <!-- Draggable Gutter Resizer -->
+          <div class="split-gutter" id="consolaSplitGutter" title="Arrastrar para redimensionar los paneles"></div>
+
+          <!-- Right Pane: Streaming Output -->
+          <div class="split-pane-right" id="consolaOutputPane">
+            <div class="panel-header" style="flex-shrink:0;">
+              <span>RESPUESTA RECIBIDA (Streaming en Vivo)</span>
+              <span id="metaTokens" style="font-family:var(--mono); color:#16a34a; font-size:0.725rem;"></span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; overflow:hidden; background:#fff;">
+              <div id="replOutput" class="output-panel" style="flex:1; max-height:none; border:none; border-radius:0;">Esperando envío de petición...</div>
             </div>
           </div>
         </div>
@@ -423,7 +498,11 @@ export OPENAI_MODEL="grok-3"</pre>
       const h = window.location.hash.replace('#', '');
       if (h) showTab(h);
     }
-    window.addEventListener('DOMContentLoaded', checkHashOrTab);
+    window.addEventListener('DOMContentLoaded', () => {
+      initResizableSplit('botsSplitGutter', 'botsListPane', 'grokbot_bots_pane_width');
+      initResizableSplit('consolaSplitGutter', 'consolaFormPane', 'grokbot_consola_pane_width');
+      checkHashOrTab();
+    });
     window.addEventListener('hashchange', checkHashOrTab);
 
     function copyProxyUrl() {
@@ -570,83 +649,197 @@ export OPENAI_MODEL="grok-3"</pre>
       }
     });
 
-    // Bot Roster WebSocket Loader
+    // Master-Detail Split Resizer (Adjustable Dragging)
+    function initResizableSplit(gutterId, leftPaneId, storageKey) {
+      const gutter = document.getElementById(gutterId);
+      const leftPane = document.getElementById(leftPaneId);
+      if (!gutter || !leftPane) return;
+
+      const savedWidth = localStorage.getItem(storageKey);
+      if (savedWidth) {
+        leftPane.style.width = savedWidth + 'px';
+      }
+
+      let isDragging = false;
+      let startX = 0;
+      let startWidth = 0;
+
+      gutter.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startWidth = leftPane.getBoundingClientRect().width;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        gutter.classList.add('dragging');
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const maxW = window.innerWidth * 0.75;
+        const minW = 280;
+        const newWidth = Math.max(minW, Math.min(maxW, startWidth + dx));
+        leftPane.style.width = newWidth + 'px';
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          gutter.classList.remove('dragging');
+          localStorage.setItem(storageKey, Math.round(leftPane.getBoundingClientRect().width));
+        }
+      });
+    }
+
+    // Bot Roster WebSocket State & Filtering
+    window._allBots = [];
+    window._filteredBots = [];
+    window._selectedBot = null;
+    window._activeAccount = '';
+
     async function refreshBots() {
-      const container = document.getElementById('botsContainer');
-      container.innerHTML = '<div style="padding:1.5rem; text-align:center; font-family:var(--mono); color:#475569;">Consultando bots registrados vía WebSocket (wss://grok.com/ws/bot)...</div>';
+      const listEl = document.getElementById('botsList');
+      if (listEl) {
+        listEl.innerHTML = '<div style="padding:1.5rem; text-align:center; font-family:var(--mono); color:#64748b;">Consultando agentes vía WebSocket (wss://grok.com/ws/bot)...</div>';
+      }
 
       try {
         const resp = await fetch('/api/agents');
         const data = await resp.json();
         window._botsLoaded = true;
 
-        let tableRows = '';
-        let totalCount = 0;
-
+        const all = [];
         for (const [acct, info] of Object.entries(data)) {
           const agents = info.agents || [];
-          totalCount += agents.length;
-
           for (const ag of agents) {
-            const timeStr = ag.lastTurnAt ? new Date(ag.lastTurnAt).toISOString().replace('T', ' ').slice(0, 19) : 'Sin actividad';
-            tableRows += \`
-              <tr>
-                <td><strong>\${acct}</strong></td>
-                <td>
-                  <div style="font-weight:600; color:var(--gov-dark-blue);">\${ag.name}</div>
-                  <div style="font-family:var(--mono); font-size:0.7rem; color:#64748b;">ID: \${ag.agentId}</div>
-                </td>
-                <td><span class="badge-ok">\${ag.status || 'activo'}</span></td>
-                <td style="font-family:var(--mono); font-size:0.75rem;">\${timeStr}</td>
-                <td>
-                  <button class="gov-btn" onclick="inspectBotTail('\${acct}', '\${ag.agentId}', '\${encodeURIComponent(ag.name)}')">Ver Historial</button>
-                </td>
-              </tr>
-            \`;
+            all.push({
+              account: acct,
+              agentId: ag.agentId,
+              name: ag.name || 'Sin nombre',
+              status: ag.status || 'activo',
+              lastTurnAt: ag.lastTurnAt,
+              entryVersion: ag.entryVersion
+            });
           }
         }
 
-        if (totalCount === 0) {
-          container.innerHTML = '<div style="padding:1rem; text-align:center; color:#64748b;">No se encontraron bots registrados en los nodos consultados.</div>';
-          return;
-        }
+        window._allBots = all;
+        const countSpan = document.getElementById('botsTotalCount');
+        if (countSpan) countSpan.textContent = all.length;
 
-        container.innerHTML = \`
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th style="width:100px;">Cuenta</th>
-                <th>Nombre del Agente / Identificador</th>
-                <th style="width:90px;">Estado</th>
-                <th style="width:160px;">Última Actividad (UTC)</th>
-                <th style="width:110px;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>\${tableRows}</tbody>
-          </table>
-        \`;
+        filterBotsList();
+
+        // Auto-select first bot if none selected
+        if (!window._selectedBot && all.length > 0) {
+          selectBot(all[0].account, all[0].agentId);
+        }
       } catch (err) {
-        container.innerHTML = '<div style="padding:1rem; text-align:center; color:#dc2626;">Error al consultar la pasarela WebSocket: ' + err.message + '</div>';
+        if (listEl) {
+          listEl.innerHTML = '<div style="padding:1rem; text-align:center; color:#dc2626;">Error al consultar bots: ' + err.message + '</div>';
+        }
       }
     }
 
-    async function inspectBotTail(acct, agentId, rawName) {
-      const panel = document.getElementById('tailInspector');
-      const title = document.getElementById('tailInspectorTitle');
-      const entriesDiv = document.getElementById('tailEntries');
+    function filterByAccount(acct) {
+      window._activeAccount = acct;
+      document.querySelectorAll('.filter-chips .chip-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById('chip-' + (acct || 'all'));
+      if (activeBtn) activeBtn.classList.add('active');
+      filterBotsList();
+    }
 
-      panel.style.display = 'block';
-      title.textContent = 'Historial de Turnos: ' + decodeURIComponent(rawName) + ' (' + acct + ')';
-      entriesDiv.innerHTML = '<span style="color:#64748b;">Recuperando entradas del transcript vía WebSocket...</span>';
-      panel.scrollIntoView({ behavior: 'smooth' });
+    function filterBotsList() {
+      const query = (document.getElementById('botsSearchInput')?.value || '').toLowerCase().trim();
+      const acct = window._activeAccount;
+
+      const filtered = window._allBots.filter(b => {
+        if (acct && b.account !== acct) return false;
+        if (query) {
+          const text = (b.name + ' ' + b.account + ' ' + b.agentId).toLowerCase();
+          if (!text.includes(query)) return false;
+        }
+        return true;
+      });
+
+      window._filteredBots = filtered;
+      const listEl = document.getElementById('botsList');
+      if (!listEl) return;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="padding:1.5rem; text-align:center; color:#64748b; font-size:0.8rem;">No se encontraron agentes con los filtros aplicados.</div>';
+        return;
+      }
+
+      let html = '';
+      for (let i = 0; i < filtered.length; i++) {
+        const b = filtered[i];
+        const isSel = window._selectedBot && window._selectedBot.agentId === b.agentId && window._selectedBot.account === b.account;
+        const timeStr = b.lastTurnAt ? new Date(b.lastTurnAt).toISOString().replace('T', ' ').slice(5, 16) : 'Sin act.';
+        const statusClass = b.status === 'running' ? 'badge-ok' : (b.status === 'idle' ? 'badge-ok' : 'badge-subtle');
+        const safeName = b.name.replace(/"/g, '&quot;');
+
+        html += \`
+          <div class="bot-item \${isSel ? 'selected' : ''}" data-idx="\${i}" onclick="selectBot('\${b.account}', '\${b.agentId}')">
+            <div class="bot-item-top">
+              <span class="acct-pill">\${b.account}</span>
+              <span class="\${statusClass}">\${b.status}</span>
+              <span style="font-family:var(--mono); font-size:0.675rem; color:#64748b;">\${timeStr}</span>
+            </div>
+            <div class="bot-item-name">\${safeName}</div>
+            <div class="bot-item-meta">
+              <span>ID: \${b.agentId.slice(0, 14)}...</span>
+              <span>v\${b.entryVersion || 1}</span>
+            </div>
+          </div>
+        \`;
+      }
+      listEl.innerHTML = html;
+    }
+
+    async function selectBot(account, agentId) {
+      const bot = window._allBots.find(b => b.account === account && b.agentId === agentId);
+      if (!bot) return;
+
+      window._selectedBot = bot;
+      document.querySelectorAll('.bot-item').forEach(el => el.classList.remove('selected'));
+      const activeItem = Array.from(document.querySelectorAll('.bot-item')).find(el => {
+        const idx = el.getAttribute('data-idx');
+        return window._filteredBots[idx]?.agentId === agentId;
+      });
+      if (activeItem) {
+        activeItem.classList.add('selected');
+        activeItem.scrollIntoView({ block: 'nearest' });
+      }
+
+      document.getElementById('botDetailEmpty').style.display = 'none';
+      const detailContent = document.getElementById('botDetailContent');
+      detailContent.style.display = 'flex';
+
+      document.getElementById('detailBotName').textContent = bot.name;
+      document.getElementById('detailBotAccount').textContent = bot.account;
+      document.getElementById('detailBotId').textContent = bot.agentId;
+      const statusBadge = document.getElementById('detailBotStatus');
+      statusBadge.textContent = bot.status;
+      statusBadge.className = bot.status === 'running' ? 'badge-ok' : (bot.status === 'idle' ? 'badge-ok' : 'badge-subtle');
+
+      await reloadCurrentBotTail();
+    }
+
+    async function reloadCurrentBotTail() {
+      if (!window._selectedBot) return;
+      const { account, agentId, name } = window._selectedBot;
+      const transcriptDiv = document.getElementById('detailTranscript');
+      transcriptDiv.innerHTML = '<span style="color:#64748b;">Recuperando turnos del transcript vía WebSocket...</span>';
 
       try {
-        const resp = await fetch('/api/agent/tail?account=' + acct + '&agentId=' + agentId + '&limit=15');
+        const resp = await fetch('/api/agent/tail?account=' + encodeURIComponent(account) + '&agentId=' + encodeURIComponent(agentId) + '&limit=25');
         const data = await resp.json();
         const entries = data.entries || [];
 
         if (entries.length === 0) {
-          entriesDiv.textContent = '(No constan mensajes recientes en el registro de este agente)';
+          transcriptDiv.textContent = '(No constan turnos recientes en el registro de este agente)';
           return;
         }
 
@@ -657,16 +850,89 @@ export OPENAI_MODEL="grok-3"</pre>
           const msg = e.content || (typeof e.message === 'string' ? e.message : (e.message?.content || JSON.stringify(e.message || e)));
           out += '[' + t + '] [' + role + ']\\n' + msg + '\\n\\n' + '-'.repeat(70) + '\\n\\n';
         }
-        entriesDiv.textContent = out.trim();
+        transcriptDiv.textContent = out.trim();
+        transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
       } catch (err) {
-        entriesDiv.textContent = 'Error al recuperar turnos: ' + err.message;
+        transcriptDiv.textContent = 'Error al recuperar turnos: ' + err.message;
       }
     }
 
-    function closeTailInspector() {
-      document.getElementById('tailInspector').style.display = 'none';
-      showToast('Inspector de turnos cerrado');
+    async function sendPromptToSelectedBot() {
+      if (!window._selectedBot) return;
+      const input = document.getElementById('detailPromptInput');
+      const text = (input?.value || '').trim();
+      if (!text) {
+        showToast('Por favor, introduzca una instrucción para enviar al agente');
+        input?.focus();
+        return;
+      }
+
+      const { account, agentId } = window._selectedBot;
+      const btn = document.getElementById('detailSendBtn');
+      btn.disabled = true;
+      showToast('Enviando instrucción directa a «' + window._selectedBot.name + '»...');
+
+      const transcriptDiv = document.getElementById('detailTranscript');
+      const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      transcriptDiv.textContent += '\\n\\n[' + nowStr + '] [user (direct)]\\n' + text + '\\n\\n' + '-'.repeat(70) + '\\n\\n[Enviado vía WebSocket wss://grok.com/ws/bot]';
+      transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
+      input.value = '';
+
+      try {
+        const resp = await fetch('/api/agent/prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account, agentId, prompt: text })
+        });
+        const resData = await resp.json();
+        if (resData.ok) {
+          showToast('Instrucción entregada al agente con éxito');
+          setTimeout(() => reloadCurrentBotTail(), 1500);
+        } else {
+          showToast('Error: ' + (resData.error || 'Fallo de entrega'));
+        }
+      } catch (err) {
+        showToast('Error de conexión: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
     }
+
+    function copyDetailBotId() {
+      if (!window._selectedBot) return;
+      const id = window._selectedBot.agentId;
+      try {
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(id);
+        }
+      } catch (_) {}
+      showToast('ID copiado: ' + id);
+    }
+
+    function navigateBotList(delta) {
+      if (!window._filteredBots || window._filteredBots.length === 0) return;
+      let curIdx = window._filteredBots.findIndex(b => window._selectedBot && b.agentId === window._selectedBot.agentId && b.account === window._selectedBot.account);
+      if (curIdx === -1) curIdx = 0;
+      const nextIdx = Math.max(0, Math.min(window._filteredBots.length - 1, curIdx + delta));
+      const nextBot = window._filteredBots[nextIdx];
+      if (nextBot) selectBot(nextBot.account, nextBot.agentId);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const activeTab = document.querySelector('.tab-content.active')?.id;
+      if (activeTab === 'tab-bots') {
+        const tag = document.activeElement?.tagName?.toLowerCase();
+        if (tag !== 'input' && tag !== 'textarea') {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            navigateBotList(1);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            navigateBotList(-1);
+          }
+        }
+      }
+    });
 
     async function testPingNode(acct) {
       showToast('Comprobando nodo «' + acct + '»...');
@@ -759,6 +1025,29 @@ export function createServer(router = null, port = 8000) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
+      return;
+    }
+
+    // POST /api/agent/prompt (Send direct prompt to agent via WebSocket)
+    if (req.method === 'POST' && pathname === '/api/agent/prompt') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { account, agentId, prompt } = JSON.parse(body);
+          if (!account || !agentId || !prompt) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing account, agentId, or prompt' }));
+            return;
+          }
+          const resp = await agentClient.prompt(account, agentId, prompt);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, result: resp }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
       return;
     }
 
