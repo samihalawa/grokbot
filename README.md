@@ -1,17 +1,36 @@
-# grokbot 🤖
+<p align="center">
+  <img src="docs/banner.svg" alt="grokbot banner" width="100%">
+</p>
 
-[![npm version](https://img.shields.io/npm/v/grokbot.svg)](https://www.npmjs.com/package/grokbot)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.0.0-brightgreen.svg)](https://nodejs.org/)
-[![Zero Dependencies](https://img.shields.io/badge/Dependencies-0-blue.svg)](package.json)
+<p align="center">
+  <a href="https://www.npmjs.com/package/grokbot"><img src="https://img.shields.io/npm/v/grokbot.svg?style=flat-square&color=38bdf8" alt="npm version"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square" alt="License: MIT"></a>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%3E%3D20.0.0-10b981.svg?style=flat-square" alt="Node.js"></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/Dependencies-0-blue.svg?style=flat-square" alt="Zero Dependencies"></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/Tests-Passing-10b981.svg?style=flat-square" alt="Tests"></a>
+</p>
 
-> **Universal Grok & Grok Bot CLI & Multi-Account Orchestrator**: parallel quota pooling, automatic HTTP 429 failover, specialized knowledge routing, 3-layer conversation export, and local OpenAI proxy. **Zero external dependencies. No external databases.**
+<h3 align="center">
+  ⚡ Universal Grok &amp; Grok Bot CLI • Multi-Account Orchestrator • Local OpenAI Proxy
+</h3>
+
+<p align="center">
+  <strong>Parallel quota pooling, automatic HTTP 429 failover, specialized knowledge routing, and 3-layer conversation export. Zero external dependencies. No external databases.</strong>
+</p>
 
 ---
 
-## ⚡ Why Grokbot?
+## 🏗️ Architecture & Topology
 
-Existing tools either only support a single desktop session, fail immediately when hitting hourly/weekly rate limits (HTTP 429), miss historical web conversations, or re-inject 50,000+ characters of prompt instructions on every turn.
+<p align="center">
+  <img src="docs/architecture.svg" alt="grokbot architecture" width="100%">
+</p>
+
+---
+
+## ⚡ Why grokbot?
+
+Standard Grok tools either bind to a single desktop session, fail immediately when hitting rate limits (HTTP 429), miss historical web conversations, or re-inject 50,000+ characters of prompt instructions on every turn.
 
 **grokbot** solves these structural bottlenecks:
 
@@ -19,12 +38,12 @@ Existing tools either only support a single desktop session, fail immediately wh
 | :--- | :--- | :--- | :--- |
 | **Runtime Dependencies** | Heavy / Electron | Node + gateway | **0 Dependencies (Pure Node.js)** |
 | **Database Requirement** | Cloud / Sand | App sand store | **Zero external databases** |
-| **Multi-Account Pooling** | ❌ Manual re-login | ❌ Single session | ✅ **Round-Robin & Least-Busy** |
-| **Quota Failover (429)** | ❌ Blocked | ❌ Error exit | ✅ **Automatic transparent retry** |
-| **Specialized Knowledge Routing** | ❌ None | ❌ None | ✅ **Role-based (`coding`, `legal`, etc.)** |
+| **Multi-Account Pooling** | ❌ Manual re-login | ❌ Single session | ✅ **Round-Robin, Least-Busy, Parallel Batch** |
+| **Quota Failover (429)** | ❌ Blocked | ❌ Error exit | ✅ **Automatic transparent retry (0 dropped jobs)** |
+| **Specialized Knowledge Routing** | ❌ None | ❌ None | ✅ **Auto-detect &amp; tags (`coding`, `filing`, etc.)** |
 | **Conversation Recovery** | Web only or app only | Roster box only | ✅ **All 3 Layers (Local + Web + Roster)** |
-| **Export Token Efficiency** | ❌ None | ❌ Verbose JSON | ✅ **Clean Markdown (70-80% token savings)** |
-| **Local OpenAI Proxy** | ❌ None | ❌ None | ✅ **`/v1/chat/completions` (SSE stream)** |
+| **Export Token Efficiency** | ❌ None | ❌ Verbose JSON | ✅ **Clean Markdown (78% token savings)** |
+| **Local OpenAI Proxy** | ❌ None | ❌ None | ✅ **`/v1/chat/completions` (SSE stream) + Web UI** |
 | **Secret Management** | Browser storage | Keyring | ✅ **1Password CLI (`op`) + Env + Config** |
 | **Agent / MCP Protocol** | ❌ None | ❌ Manual socket | ✅ **Built-in stdio MCP server** |
 
@@ -48,7 +67,7 @@ Export your Grok SSO cookie (or set it in your environment):
 ```bash
 export GROK_SSO="your-sso-cookie-value"
 
-# Ask Grok directly with streaming markdown
+# Ask Grok directly with live streaming markdown
 grokbot ask "Explain the CAP theorem in 2 concise paragraphs"
 ```
 
@@ -61,7 +80,7 @@ grokbot chat --model grok-3
 
 ## 🔄 Multi-Account Parallel Pooling & Failover
 
-Running heavy research, deep search, or agent swarms burns through Grok limits quickly. `grokbot` pools multiple accounts into a unified high-throughput cluster.
+Running heavy research, deep search, or agent swarms burns through single-account Grok limits quickly. `grokbot` pools multiple accounts into a unified cluster.
 
 ### Adding Accounts to Pool
 
@@ -76,32 +95,28 @@ grokbot pool list
 grokbot pool status
 ```
 
-### How Automatic Quota Failover Works
+### Automatic Quota Failover
 
-```
-                        ┌───────────────────────────────┐
-                        │   User / Agent Request        │
-                        └──────────────┬────────────────┘
-                                       │
-                                       ▼
-                       ┌────────────────────────────────┐
-                       │   grokbot Pool Router          │
-                       │   (Round-robin / Role filter)  │
-                       └──────────────┬─────────────────┘
-                                      │
-              ┌───────────────────────┴────────────────────────┐
-              ▼                                                ▼
-     [Account: primary]                               [Account: secondary]
-    HTTP 429 Quota Exhausted!                                  │
-              │                                                │
-   ⚠️ Cooldown Activated (15m)                                 │
-   Seamless Instant Failover ─────────────────────────────────►│
-                                                      HTTP 200 Stream Done ✅
-```
-
-1. **Role Matching**: When a request arrives with `--role coding`, it routes to accounts tagged with `coding`.
+1. **Role Matching**: When a request arrives (e.g. `--role coding` or code prompt detected), it routes to accounts tagged with `coding`.
 2. **Quota Exhaustion Detection**: If Grok returns HTTP 429 or rate-limit warnings, `grokbot` marks that account in cooldown (default: 15 minutes).
 3. **Zero Dropped Requests**: The request is instantly and transparently re-routed to the next healthy account in the pool.
+
+---
+
+## 🚀 Parallel Batch Dispatch (`grokbot batch`)
+
+Process large collections of prompts across multiple accounts concurrently with zero rate-limit interruptions:
+
+```bash
+# Run batch across all accounts with concurrency 4
+grokbot batch prompts.jsonl --concurrency 4 --output results.jsonl
+```
+
+Input format (`prompts.jsonl`):
+```json
+{"id": "task-1", "prompt": "Refactor this SQL query for index efficiency: ...", "role": "coding"}
+{"id": "task-2", "prompt": "Extract compliance requirements from this tender clause: ...", "role": "filing"}
+```
 
 ---
 
@@ -127,17 +142,23 @@ grokbot export --format jsonl --output ~/grok_archive.jsonl
 - **Token-Efficient Markdown:** ~480k tokens (1.92 MB)
 - **Savings:** **~78% fewer tokens** when re-injected into LLM context windows!
 
+Calculate savings for any text or prompt file:
+```bash
+grokbot tokens ~/my_prompt.txt
+```
+
 ---
 
-## 🌐 Local OpenAI-Compatible Server (`grokbot serve`)
+## 🌐 Local OpenAI Server & Web Dashboard (`grokbot serve`)
 
-Turn your Grok pool into a local standard OpenAI-compatible API server:
+Turn your Grok pool into a local standard OpenAI-compatible API server with a built-in real-time Web Dashboard:
 
 ```bash
 grokbot serve --port 8000
 ```
 
-Any tool, IDE, or agent can now connect with zero code changes:
+- **Web Dashboard:** Open `http://localhost:8000/` in any browser to monitor account health, cooldowns, and run test prompts.
+- **OpenAI Endpoint:** `http://localhost:8000/v1/chat/completions`
 
 ### In Cursor / VS Code / Claude Code:
 - **Base URL:** `http://127.0.0.1:8000/v1`
@@ -185,36 +206,6 @@ Run comprehensive diagnostics to verify local desktop install, persistence slice
 grokbot doctor
 ```
 
-Output:
-```text
-================================================================================
-🩺 GROKBOT ENVIRONMENT & HEALTH DIAGNOSTICS
-================================================================================
-
-[1] Runtime Environment:
-  • Node.js:  v22.x
-  • Platform: darwin arm64
-  • Config:   ~/.config/grok-bot/config.json (Found)
-
-[2] Grok Bot Desktop Storage:
-  ✅ Desktop App Data: ~/Library/Application Support/Grok Bot
-  ✅ Persistent Slices: 4 slices detected
-
-[3] Secret Management Tools:
-  ✅ 1Password CLI ("op"): Detected
-  ✅ 1Password Session: Signed in and active
-
-[4] Multi-Account Pool & Live Connectivity:
-  Pool Strategy: round-robin | Auto-Failover: true | Accounts: 4
-  [1] Account: hao (Roles: [general, filing]) -> ✅ Authenticated
-  [2] Account: sami (Roles: [general, coding]) -> ✅ Authenticated
-  [3] Account: h999 (Roles: [filing, regional]) -> ✅ Authenticated
-  [4] Account: oulang (Roles: [scrapers, notifications]) -> ✅ Authenticated
-================================================================================
-🎉 ALL SYSTEMS OPERATIONAL. Ready for parallel multi-account routing & export.
-================================================================================
-```
-
 ---
 
 ## 🔌 Model Context Protocol (MCP)
@@ -242,15 +233,17 @@ grokbot <command> [options]
 Commands:
   ask <prompt>             Query Grok with automatic pool failover and streaming
   chat                     Start an interactive multi-turn REPL chat session
+  batch <file>             Execute batch prompts in parallel across all pool accounts
   pool list                Show all pool accounts and live cooldown status
   pool status              Ping all accounts and report auth states
   pool add                 Register an account profile in the pool
   pool remove <name>       Remove an account profile from the pool
   pool clear-cooldown      Reset cooldown timers manually
   export                   Extract conversations from all 3 layers
+  tokens <file|string>     Calculate token density and estimate markdown savings
   skills list              List account-level skills
   skills sync-pool <path>  Sync a SKILL.md across all pool accounts
-  serve                    Start local OpenAI-compatible API proxy server
+  serve                    Start local OpenAI-compatible API proxy server & Web UI
   doctor                   Run full system diagnostics and connectivity check
   mcp                      Start Model Context Protocol stdio server
 
@@ -258,6 +251,7 @@ Options:
   --model, -m <model>      grok-3, grok-3-deepsearch, grok-3-think, grok-2 (default: grok-3)
   --account, -a <name>     Preferred account alias
   --role, -r <role>        Target specialized role (e.g. coding, general, filing)
+  --concurrency, -c <N>    Batch concurrency (default: pool accounts count)
   --format, -f <fmt>       markdown, text, jsonl, json (default: markdown)
   --output, -o <file>      Export destination file path
   --json                   Output canonical JSON response

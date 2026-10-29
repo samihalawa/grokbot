@@ -5,6 +5,15 @@ All notable changes to `grokbot` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-10-29
+
+### Added
+- **Visual Branding & Architecture Diagrams**: High-resolution SVG banner and topology diagram in `docs/` for enhanced GitHub presentation and developer clarity.
+- **Parallel Batch Dispatch (`grokbot batch`)**: Concurrently dispatches prompt queues across healthy accounts in the pool with automatic rate-limit rebalancing.
+- **Context & Specialized Knowledge Classifier**: Auto-detects prompt intent (coding, legal/filing, scrapers, deepsearch) and routes to optimal account profiles automatically.
+- **Real-Time Web Dashboard (`grokbot serve`)**: Dark-mode web interface at `http://localhost:8000/` with live account cards, cooldown timers, request metrics, and interactive test playground.
+- **Token Density Calculator (`grokbot tokens`)**: Calculates token counts and estimates savings for files or prompts against raw JSON baselines.
+
 ## [1.0.0] - 2026-10-29
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "grokbot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Universal Grok & Grok Bot CLI: multi-account parallel orchestration, automatic quota failover, 3-layer conversation export, and local OpenAI proxy.",
   "type": "module",
   "main": "./src/index.js",

@@ -4,7 +4,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { ConfigManager } from '../src/config.js';
-import { GrokPoolRouter } from '../src/pool.js';
+import { GrokPoolRouter, detectSpecializedRole } from '../src/pool.js';
+
+test('detectSpecializedRole: auto-detects domain context from prompts', () => {
+  assert.equal(detectSpecializedRole('Write a function to sort an array'), 'coding');
+  assert.equal(detectSpecializedRole('Revisa los pliegos y la licitación'), 'filing');
+  assert.equal(detectSpecializedRole('Scrape all notification links from portal'), 'scrapers');
+  assert.equal(detectSpecializedRole('Perform a deepsearch literature survey'), 'deepsearch');
+  assert.equal(detectSpecializedRole('Hello world'), null);
+});
 
 test('GrokPoolRouter: role-based candidate routing and cooldown failover', () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'grokbot-pool-test-'));
