@@ -599,11 +599,13 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
                 </select>
                 <div class="form-label">Enrutamiento:</div>
                 <select id="replRole" class="form-select">
-                  <option value="" selected>Automático (según palabras clave)</option>
+                  <option value="" selected>Automático (afinidad por rol + fallback réplicas)</option>
+                  <option value="replica">🔄 Réplicas Horizontales Simétricas (Pool Paralelo / Balanceo)</option>
                   <option value="coding">coding (Desarrollo, TypeScript, Python)</option>
                   <option value="filing">filing (Licitaciones, PLACSP, Documentación)</option>
                   <option value="scrapers">scrapers (Notificaciones, Ingress)</option>
                   <option value="legal">legal (Pliegos, Cláusulas, Ley de Contratos)</option>
+                  <option value="deepsearch">deepsearch (Investigación exhaustiva)</option>
                 </select>
               </div>
               <div style="flex:1; display:flex; flex-direction:column;">
@@ -673,7 +675,7 @@ export OPENAI_MODEL="grok-3"</pre>
       Modo: <strong>Sin Dependencias Externas (Node.js Nativo)</strong> | Clúster: <strong>${poolStatus.length} Nodos Operativos</strong>
     </div>
     <div class="footer-mobile">
-      ⚖️ <strong>GROKBOT v1.3.1</strong> · Clúster ${poolStatus.length} Nodos Operativos · Node.js Nativo
+      ⚖️ <strong>GROKBOT v1.3.2</strong> · Clúster ${poolStatus.length} Nodos Operativos · Node.js Nativo
     </div>
   </div>
 
@@ -817,6 +819,9 @@ export OPENAI_MODEL="grok-3"</pre>
       }
 
       const t0 = performance.now();
+      const roleSelect = document.getElementById('replRole')?.value || '';
+      const role = (roleSelect === 'replica' || roleSelect === 'parallel') ? null : (roleSelect || null);
+      const strategy = (roleSelect === 'replica' || roleSelect === 'parallel') ? 'replica' : undefined;
 
       try {
         const resp = await fetch('/v1/chat/completions', {
@@ -824,6 +829,8 @@ export OPENAI_MODEL="grok-3"</pre>
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model,
+            role,
+            strategy,
             messages: [{ role: 'user', content: prompt }],
             stream: true
           })
@@ -1355,6 +1362,9 @@ export function createServer(router = null, port = 8000) {
         const messages = reqData.messages || [];
         const model = reqData.model || 'grok-3';
         const stream = Boolean(reqData.stream);
+        const role = reqData.role || null;
+        const preferredAccount = reqData.account || reqData.preferredAccount || null;
+        const strategy = reqData.strategy || null;
 
         // Format prompt from messages
         const promptParts = [];
@@ -1391,7 +1401,12 @@ export function createServer(router = null, port = 8000) {
           });
 
           try {
-            const chatStream = routerInstance.executeChatStream(fullPrompt, { model });
+            const chatStream = routerInstance.executeChatStream(fullPrompt, {
+              model,
+              role,
+              preferredAccount,
+              strategy,
+            });
             for await (const chunk of chatStream) {
               if (chunk.type === 'token') {
                 const chunkObj = {
@@ -1439,7 +1454,12 @@ export function createServer(router = null, port = 8000) {
           }
         } else {
           try {
-            const result = await routerInstance.query(fullPrompt, { model });
+            const result = await routerInstance.query(fullPrompt, {
+              model,
+              role,
+              preferredAccount,
+              strategy,
+            });
             const respPayload = {
               id: reqId,
               object: 'chat.completion',
@@ -1450,15 +1470,15 @@ export function createServer(router = null, port = 8000) {
                   index: 0,
                   message: {
                     role: 'assistant',
-                    content: result.content,
+                    content: result.text || result.content || '',
                   },
                   finish_reason: 'stop',
                 },
               ],
               usage: {
                 prompt_tokens: Math.ceil(fullPrompt.length / 4),
-                completion_tokens: Math.ceil((result.content || '').length / 4),
-                total_tokens: Math.ceil((fullPrompt.length + (result.content || '').length) / 4),
+                completion_tokens: Math.ceil((result.text || '').length / 4),
+                total_tokens: Math.ceil((fullPrompt.length + (result.text || '').length) / 4),
               },
               _grok_meta: {
                 account: result.account,

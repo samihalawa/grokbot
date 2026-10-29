@@ -97,7 +97,7 @@ export function renderSvgClusterCard(statusList) {
 
 export function printHelp() {
   console.log(`
-grokbot 1.2.0 — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
+grokbot 1.3.2 — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
 
 Usage:
   grokbot <command> [options]
@@ -123,6 +123,8 @@ Options:
   --model, -m <model>      Model: grok-3, grok-3-deepsearch, grok-3-think, grok-2 (default: grok-3)
   --account, -a <name>     Preferred account alias
   --role, -r <role>        Target specialized role (e.g. coding, filing, scrapers, deepsearch)
+  --strategy, -s <strat>   Routing strategy: least-busy, round-robin, replica (default: least-busy)
+  --parallel, --replica    Dispatch as symmetric identical replicas with dynamic load balancing
   --format, -f <fmt>       Export format: markdown, text, jsonl, json (default: markdown)
   --output, -o <file>      Destination file path
   --concurrency, -c <N>    Batch concurrency (default: pool accounts count)
@@ -133,9 +135,10 @@ Options:
 
 Examples:
   grokbot ask "Explain quantum computing in 2 sentences"
+  grokbot ask "Review procurement tender" --role filing
+  grokbot ask "Generate benchmark tests" --strategy replica
   grokbot pool status --visual
-  grokbot pool status --svg
-  grokbot batch prompts.jsonl --concurrency 4 --output results.jsonl
+  grokbot batch prompts.jsonl --parallel --concurrency 4 --output results.jsonl
   grokbot serve --port 8000
 `);
 }
@@ -170,6 +173,12 @@ function parseCliArgs(argv) {
       i++;
     } else if (arg === '--no-stream') {
       args.flags.noStream = true;
+      i++;
+    } else if (arg === '--parallel' || arg === '--replica') {
+      args.flags.strategy = 'replica';
+      i++;
+    } else if (arg === '-s' || arg === '--strategy') {
+      args.flags.strategy = raw[++i];
       i++;
     } else if (arg === '-m' || arg === '--model') {
       args.flags.model = raw[++i];
@@ -219,7 +228,7 @@ export async function runCli(argv = process.argv) {
   const args = parseCliArgs(argv);
 
   if (args.flags.version) {
-    console.log('grokbot 1.2.0');
+    console.log('grokbot 1.3.2');
     return 0;
   }
 
@@ -242,9 +251,10 @@ export async function runCli(argv = process.argv) {
       const model = args.flags.model || 'grok-3';
       const preferredAccount = args.flags.account || null;
       const role = args.flags.role || null;
+      const strategy = args.flags.strategy || null;
 
       if (args.flags.json || args.flags.noStream) {
-        const res = await router.query(prompt, { model, preferredAccount, role });
+        const res = await router.query(prompt, { model, preferredAccount, role, strategy });
         if (args.flags.json) {
           console.log(JSON.stringify(res, null, 2));
         } else {
@@ -256,7 +266,7 @@ export async function runCli(argv = process.argv) {
         let servedEmail = null;
         let cid = null;
 
-        const stream = router.executeChatStream(prompt, { model, preferredAccount, role });
+        const stream = router.executeChatStream(prompt, { model, preferredAccount, role, strategy });
         for await (const chunk of stream) {
           if (chunk.type === 'account_selected') {
             servedAccount = chunk.account;
@@ -292,10 +302,11 @@ export async function runCli(argv = process.argv) {
         }
       });
 
-      console.log(`🚀 Dispatching ${items.length} batch prompt(s) across pool accounts (Concurrency: ${args.flags.concurrency || cfg.accounts.size})...`);
+      console.log(`🚀 Dispatching ${items.length} batch prompt(s) across pool accounts (Concurrency: ${args.flags.concurrency || cfg.accounts.size}, Strategy: ${args.flags.strategy || 'replica'})...`);
       const results = await router.executeBatch(items, {
         concurrency: args.flags.concurrency,
         model: args.flags.model,
+        strategy: args.flags.strategy || 'replica',
         onProgress: ({ completed, total }) => {
           process.stdout.write(`\rProgress: [${completed}/${total}] completed...`);
         },
@@ -364,6 +375,7 @@ export async function runCli(argv = process.argv) {
               model: args.flags.model || 'grok-3',
               preferredAccount: args.flags.account || null,
               role: args.flags.role || null,
+              strategy: args.flags.strategy || null,
               conversationId: convId,
             });
 

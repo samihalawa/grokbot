@@ -146,64 +146,110 @@ export class GrokPoolRouter {
     this._saveState();
   }
 
-  getCandidateAccounts(preferredAccount = null, role = null, conversationId = null) {
+  getCandidateAccounts(preferredAccount = null, role = null, conversationId = null, strategy = null) {
     const allAccounts = Array.from(this.cfg.accounts.keys());
     if (allAccounts.length === 0) return [];
+
+    const effectiveStrategy = strategy || this.cfg.strategy || 'least-busy';
+
+    // Helper to sort accounts by strategy (least-busy or round-robin)
+    const sortByStrategy = (list) => {
+      if (list.length <= 1) return [...list];
+      if (
+        effectiveStrategy === 'least-busy' ||
+        effectiveStrategy === 'replica' ||
+        effectiveStrategy === 'parallel'
+      ) {
+        return [...list].sort((a, b) => {
+          const reqA = this.state.stats?.[a]?.requests || 0;
+          const reqB = this.state.stats?.[b]?.requests || 0;
+          if (reqA !== reqB) return reqA - reqB;
+          const weightA = this.cfg.accounts.get(a)?.weight || 1;
+          const weightB = this.cfg.accounts.get(b)?.weight || 1;
+          return weightB - weightA;
+        });
+      }
+      // Round-robin offset
+      const lastIdx = this.state.last_idx || 0;
+      const n = list.length;
+      const offset = lastIdx % n;
+      return [...list.slice(offset), ...list.slice(0, offset)];
+    };
+
+    // Helper to sort cooling accounts by shortest remaining cooldown time
+    const sortByCooldown = (list) => {
+      return [...list].sort((a, b) => {
+        const cdA = this.state.cooldowns?.[a] || 0;
+        const cdB = this.state.cooldowns?.[b] || 0;
+        return cdA - cdB;
+      });
+    };
 
     // 1. Sticky conversation mapping
     if (conversationId && this.state.conversation_map && this.state.conversation_map[conversationId]) {
       const mapped = this.state.conversation_map[conversationId];
       if (allAccounts.includes(mapped) && !this.isInCooldown(mapped)) {
         const others = allAccounts.filter((a) => a !== mapped);
-        return [mapped, ...others];
+        const healthyOthers = sortByStrategy(others.filter((a) => !this.isInCooldown(a)));
+        const coolingOthers = sortByCooldown(others.filter((a) => this.isInCooldown(a)));
+        return [mapped, ...healthyOthers, ...coolingOthers];
       }
     }
 
     // 2. Preferred explicit account
     if (preferredAccount && allAccounts.includes(preferredAccount)) {
       const others = allAccounts.filter((a) => a !== preferredAccount);
-      return [preferredAccount, ...others];
-    }
-
-    // 3. Filter by specialized knowledge/role
-    let candidates = allAccounts;
-    if (role) {
-      const roleMatches = [];
-      for (const [name, prof] of this.cfg.accounts.entries()) {
-        const roles = (prof.roles || []).map((r) => r.toLowerCase());
-        if (roles.includes(role.toLowerCase())) {
-          roleMatches.push(name);
-        }
+      const isPrefHealthy = !this.isInCooldown(preferredAccount);
+      const healthyOthers = sortByStrategy(others.filter((a) => !this.isInCooldown(a)));
+      const coolingOthers = sortByCooldown(others.filter((a) => this.isInCooldown(a)));
+      if (isPrefHealthy) {
+        return [preferredAccount, ...healthyOthers, ...coolingOthers];
       }
-      if (roleMatches.length > 0) {
-        candidates = roleMatches;
-      }
+      return [...healthyOthers, preferredAccount, ...coolingOthers];
     }
 
-    const healthy = candidates.filter((a) => !this.isInCooldown(a));
-    const cooling = candidates.filter((a) => this.isInCooldown(a));
+    // 3. Symmetric Replica Mode (pure parallel load-balancing without role preference)
+    const isSymmetricReplica =
+      effectiveStrategy === 'replica' ||
+      effectiveStrategy === 'parallel' ||
+      role === 'replica' ||
+      role === 'parallel';
 
-    if (healthy.length === 0) {
-      cooling.sort((a, b) => (this.state.cooldowns[a] || 0) - (this.state.cooldowns[b] || 0));
-      return cooling;
-    }
-
-    // Sort healthy by strategy
-    if (this.cfg.strategy === 'least-busy') {
-      healthy.sort((a, b) => {
-        const reqA = this.state.stats?.[a]?.requests || 0;
-        const reqB = this.state.stats?.[b]?.requests || 0;
-        return reqA - reqB;
-      });
+    if (isSymmetricReplica || !role) {
+      const healthy = sortByStrategy(allAccounts.filter((a) => !this.isInCooldown(a)));
+      const cooling = sortByCooldown(allAccounts.filter((a) => this.isInCooldown(a)));
       return [...healthy, ...cooling];
     }
 
-    // Default round-robin offset
-    const lastIdx = this.state.last_idx || 0;
-    const n = healthy.length;
-    const offset = lastIdx % n;
-    const ordered = [...healthy.slice(offset), ...healthy.slice(0, offset)];
-    return [...ordered, ...cooling];
+    // 4. Role-affinity routing with horizontal symmetric replica fallback
+    const roleMatches = [];
+    const fallbackAccounts = [];
+    for (const [name, prof] of this.cfg.accounts.entries()) {
+      const roles = (prof.roles || []).map((r) => r.toLowerCase());
+      if (roles.includes(role.toLowerCase())) {
+        roleMatches.push(name);
+      } else {
+        fallbackAccounts.push(name);
+      }
+    }
+
+    // If no account explicitly matches the role, treat all accounts as candidates
+    if (roleMatches.length === 0) {
+      const healthy = sortByStrategy(allAccounts.filter((a) => !this.isInCooldown(a)));
+      const cooling = sortByCooldown(allAccounts.filter((a) => this.isInCooldown(a)));
+      return [...healthy, ...cooling];
+    }
+
+    const healthyRole = sortByStrategy(roleMatches.filter((a) => !this.isInCooldown(a)));
+    const healthyFallback = sortByStrategy(fallbackAccounts.filter((a) => !this.isInCooldown(a)));
+    const coolingRole = sortByCooldown(roleMatches.filter((a) => this.isInCooldown(a)));
+    const coolingFallback = sortByCooldown(fallbackAccounts.filter((a) => this.isInCooldown(a)));
+
+    // Tier 1: Healthy specialized role matches
+    // Tier 2: Healthy horizontal fallback replicas (preserves continuous operations!)
+    // Tier 3: Cooling role accounts (soonest back online)
+    // Tier 4: Cooling fallback accounts
+    return [...healthyRole, ...healthyFallback, ...coolingRole, ...coolingFallback];
   }
 
   recordUsage(acctName, success = true) {
@@ -231,17 +277,18 @@ export class GrokPoolRouter {
       preferredAccount = null,
       role = null,
       conversationId = null,
+      strategy = null,
     } = options;
 
-    // Automatic specialized role detection if none explicitly supplied
-    if (!role && !preferredAccount) {
+    // Automatic specialized role detection if none explicitly supplied and strategy is not replica
+    if (!role && !preferredAccount && strategy !== 'replica' && strategy !== 'parallel') {
       role = detectSpecializedRole(prompt);
       if (role) {
         process.stderr.write(`[context-router] Auto-detected specialized role: '${role}'\n`);
       }
     }
 
-    const candidates = this.getCandidateAccounts(preferredAccount, role, conversationId);
+    const candidates = this.getCandidateAccounts(preferredAccount, role, conversationId, strategy);
     if (candidates.length === 0) {
       throw new Error("No accounts available in pool. Run 'grokbot pool add' or set GROK_SSO.");
     }
@@ -371,10 +418,11 @@ export class GrokPoolRouter {
         const id = typeof item === 'object' ? item.id || `item-${i}` : `item-${i}`;
         const model = (typeof item === 'object' && item.model) || options.model || 'grok-3';
         const role = (typeof item === 'object' && item.role) || options.role || null;
+        const strategy = (typeof item === 'object' && item.strategy) || options.strategy || 'replica';
 
         const start = Date.now();
         try {
-          const res = await this.query(prompt, { model, role });
+          const res = await this.query(prompt, { model, role, strategy });
           results[i] = {
             id,
             success: true,

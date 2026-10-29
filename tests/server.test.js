@@ -35,6 +35,15 @@ test('Server: returns OpenAI models list and health status', async () => {
     assert.ok(dashHtml.includes('GROKBOT'));
     assert.ok(dashHtml.includes('drawer-toggle-btn'));
     assert.ok(dashHtml.includes('mobile-back-btn'));
+    assert.ok(dashHtml.includes('Réplicas Horizontales Simétricas'));
+
+    // 5. POST /v1/chat/completions bad payload validation
+    const respBad = await fetch(`${baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'invalid-json{',
+    });
+    assert.equal(respBad.status, 400);
   } finally {
     server.close();
   }
