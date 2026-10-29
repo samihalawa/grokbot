@@ -13,9 +13,62 @@ import { runServer } from './server.js';
 import { runDoctor } from './doctor.js';
 import { runMcpServer } from './mcp.js';
 
+export function renderVisualClusterMeter(statusList) {
+  const lines = [];
+  lines.push('┌' + '─'.repeat(78) + '┐');
+  lines.push('│ 🤖 GROKBOT CLUSTER STATUS & ORCHESTRATION PIPELINE' + ' '.repeat(28) + '│');
+  lines.push('├' + '─'.repeat(78) + '┤');
+
+  for (const item of statusList) {
+    const name = item.name.padEnd(8);
+    const email = (item.email || 'N/A').padEnd(28);
+    const roles = `[${(item.roles || []).join(', ')}]`.padEnd(20);
+    const sym = item.auth_ok ? '🟢 ACTIVE  ' : (item.cooldown ? '⏳ COOLDOWN' : '🔴 OFFLINE ');
+    const requests = item.stats?.requests || 0;
+    const reqBarLen = Math.min(16, Math.max(1, requests % 16 || 4));
+    const bar = '█'.repeat(reqBarLen) + '░'.repeat(16 - reqBarLen);
+
+    lines.push(`│ ${name} ${email} ${roles} │`);
+    lines.push(`│ ${sym}  Load: [${bar}] (${requests} reqs) • Cooldown: ${item.cooldown_remaining_sec}s`.padEnd(79) + '│');
+    lines.push('│' + ' '.repeat(78) + '│');
+  }
+
+  lines.pop(); // remove last empty line
+  lines.push('└' + '─'.repeat(78) + '┘');
+  return lines.join('\n');
+}
+
+export function renderSvgClusterCard(statusList) {
+  const height = 100 + statusList.length * 60;
+  const cards = statusList
+    .map((item, idx) => {
+      const y = 80 + idx * 56;
+      const color = item.auth_ok ? '#10b981' : (item.cooldown ? '#f59e0b' : '#ef4444');
+      const statusText = item.cooldown ? `Cooldown (${item.cooldown_remaining_sec}s)` : (item.auth_ok ? 'Active' : 'Error');
+      return `
+    <g transform="translate(20, ${y})">
+      <rect width="660" height="48" rx="6" fill="#131622" stroke="#232738" />
+      <circle cx="20" cy="24" r="5" fill="${color}" />
+      <text x="36" y="28" font-family="-apple-system, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">${item.name}</text>
+      <text x="120" y="28" font-family="-apple-system, sans-serif" font-size="12" fill="#94a3b8">${item.email || 'N/A'}</text>
+      <text x="360" y="28" font-family="-apple-system, sans-serif" font-size="11" fill="#64748b">[${(item.roles || []).join(', ')}]</text>
+      <text x="560" y="28" font-family="-apple-system, sans-serif" font-size="12" font-weight="600" fill="${color}">${statusText}</text>
+    </g>`;
+    })
+    .join('');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 ${height}" width="100%">
+  <rect width="700" height="${height}" rx="10" fill="#090a10" stroke="#1e2333" />
+  <text x="24" y="42" font-family="-apple-system, sans-serif" font-size="16" font-weight="800" fill="#f8fafc">🤖 grokbot Multi-Account Cluster</text>
+  <text x="520" y="42" font-family="-apple-system, sans-serif" font-size="12" fill="#64748b">${statusList.length} accounts configured</text>
+  <line x1="20" y1="58" x2="680" y2="58" stroke="#1e2333" />
+  ${cards}
+</svg>`;
+}
+
 export function printHelp() {
   console.log(`
-grokbot 1.1.0 — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
+grokbot 1.1.2 — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
 
 Usage:
   grokbot <command> [options]
@@ -43,17 +96,16 @@ Options:
   --format, -f <fmt>       Export format: markdown, text, jsonl, json (default: markdown)
   --output, -o <file>      Destination file path
   --concurrency, -c <N>    Batch concurrency (default: pool accounts count)
+  --visual                 Render optional inline visual meter
+  --svg                    Output inline SVG card
   --json                   Output canonical JSON response
   --no-stream              Disable live token streaming
 
 Examples:
   grokbot ask "Explain quantum computing in 2 sentences"
-  grokbot ask "Write a fast matrix multiplication" --role coding
+  grokbot pool status --visual
+  grokbot pool status --svg
   grokbot batch prompts.jsonl --concurrency 4 --output results.jsonl
-  grokbot pool list
-  grokbot pool status
-  grokbot export --format markdown --output ~/grok_archive.md
-  grokbot tokens ~/my_prompt.txt
   grokbot serve --port 8000
 `);
 }
@@ -79,6 +131,12 @@ function parseCliArgs(argv) {
       i++;
     } else if (arg === '--json') {
       args.flags.json = true;
+      i++;
+    } else if (arg === '--visual') {
+      args.flags.visual = true;
+      i++;
+    } else if (arg === '--svg') {
+      args.flags.svg = true;
       i++;
     } else if (arg === '--no-stream') {
       args.flags.noStream = true;
@@ -131,7 +189,7 @@ export async function runCli(argv = process.argv) {
   const args = parseCliArgs(argv);
 
   if (args.flags.version) {
-    console.log('grokbot 1.1.0');
+    console.log('grokbot 1.1.2');
     return 0;
   }
 
@@ -302,6 +360,17 @@ export async function runCli(argv = process.argv) {
       const sub = args.subcommand || 'list';
 
       if (sub === 'list') {
+        if (args.flags.visual) {
+          const statusList = await router.getPoolStatus();
+          console.log(renderVisualClusterMeter(statusList));
+          return 0;
+        }
+        if (args.flags.svg) {
+          const statusList = await router.getPoolStatus();
+          console.log(renderSvgClusterCard(statusList));
+          return 0;
+        }
+
         console.log('='.repeat(80));
         console.log(`GROK MULTI-ACCOUNT POOL (${cfg.accounts.size} accounts configured)`);
         console.log('='.repeat(80));
@@ -327,8 +396,17 @@ export async function runCli(argv = process.argv) {
       }
 
       if (sub === 'status') {
-        console.log('Pinging pool accounts...');
         const statusList = await router.getPoolStatus();
+        if (args.flags.visual) {
+          console.log(renderVisualClusterMeter(statusList));
+          return 0;
+        }
+        if (args.flags.svg) {
+          console.log(renderSvgClusterCard(statusList));
+          return 0;
+        }
+
+        console.log('Pinging pool accounts...');
         console.log('='.repeat(80));
         let i = 1;
         for (const item of statusList) {
