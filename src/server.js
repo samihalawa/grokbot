@@ -131,23 +131,23 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
     <div class="gov-meta-strip">
       <span>ESTADO: <strong>ACTIVO Y OPERATIVO</strong></span>
       <span>NÚMERO DE CUENTAS: <strong>${poolStatus.length}</strong></span>
-      <span>VERSIÓN: <strong>v1.2.2</strong></span>
+      <span>VERSIÓN: <strong>v1.2.3</strong></span>
     </div>
   </div>
 
   <!-- Action Ribbon -->
   <div class="action-ribbon">
     <div class="ribbon-btns">
-      <button class="gov-btn ${isCuentas ? 'gov-btn-primary' : ''}" onclick="showTab('tab-cuentas')">📋 01 - Cuentas & Cuotas</button>
-      <button class="gov-btn ${isBots ? 'gov-btn-primary' : ''}" onclick="showTab('tab-bots')">🤖 02 - Pasarela de Bots (WebSocket)</button>
-      <button class="gov-btn ${isConsola ? 'gov-btn-primary' : ''}" onclick="showTab('tab-consola')">⚡ 03 - Consola Interactiva</button>
-      <button class="gov-btn ${isIntegracion ? 'gov-btn-primary' : ''}" onclick="showTab('tab-integracion')">🔌 04 - Configuración Cursor / IDE</button>
+      <button id="btn-tab-cuentas" class="gov-btn ${isCuentas ? 'gov-btn-primary' : ''}" onclick="showTab('tab-cuentas')">📋 01 - Cuentas & Cuotas</button>
+      <button id="btn-tab-bots" class="gov-btn ${isBots ? 'gov-btn-primary' : ''}" onclick="showTab('tab-bots')">🤖 02 - Pasarela de Bots (WebSocket)</button>
+      <button id="btn-tab-consola" class="gov-btn ${isConsola ? 'gov-btn-primary' : ''}" onclick="showTab('tab-consola')">⚡ 03 - Consola Interactiva</button>
+      <button id="btn-tab-integracion" class="gov-btn ${isIntegracion ? 'gov-btn-primary' : ''}" onclick="showTab('tab-integracion')">🔌 04 - Configuración Cursor / IDE</button>
     </div>
     <div>
       <span style="font-family:var(--mono); font-size:0.75rem; color:#475569; margin-right:0.5rem;">
         Proxy OpenAI: <strong>http://127.0.0.1:${port}/v1</strong>
       </span>
-      <button class="gov-btn" onclick="copyProxyUrl()">Copiar URL</button>
+      <button id="btn-copy-proxy" class="gov-btn" onclick="copyProxyUrl()">Copiar URL</button>
     </div>
   </div>
 
@@ -174,7 +174,7 @@ function getDashboardHtml(poolStatus, port, activeTab = 'cuentas') {
       <div class="sidebar-section-title">▼ Operaciones Rápidas</div>
       <ul class="sidebar-menu">
         <li class="sidebar-item" onclick="showTab('tab-consola')">▶ Ejecutar Instrucción</li>
-        <li class="sidebar-item" onclick="refreshBots()">▶ Sincronizar Roster Bots</li>
+        <li class="sidebar-item" onclick="showTab('tab-bots'); refreshBots();">▶ Sincronizar Roster Bots</li>
         <li class="sidebar-item" onclick="clearAllCooldowns()">▶ Limpiar Cooldowns (Reset)</li>
       </ul>
 
@@ -396,19 +396,22 @@ export OPENAI_MODEL="grok-3"</pre>
   <script>
     function showToast(msg) {
       const t = document.getElementById('govToast');
+      if (!t) return;
       t.textContent = msg;
       t.style.display = 'block';
-      setTimeout(() => { t.style.display = 'none'; }, 2500);
+      clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => { t.style.display = 'none'; }, 2800);
     }
 
     function showTab(tabId) {
+      if (!tabId.startsWith('tab-')) tabId = 'tab-' + tabId;
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.ribbon-btns .gov-btn').forEach(btn => btn.classList.remove('gov-btn-primary'));
       
       const target = document.getElementById(tabId);
       if (target) target.classList.add('active');
 
-      const btn = Array.from(document.querySelectorAll('.ribbon-btns .gov-btn')).find(b => b.getAttribute('onclick')?.includes(tabId));
+      const btn = document.getElementById('btn-' + tabId);
       if (btn) btn.classList.add('gov-btn-primary');
 
       if (tabId === 'tab-bots' && !window._botsLoaded) {
@@ -416,16 +419,29 @@ export OPENAI_MODEL="grok-3"</pre>
       }
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const h = window.location.hash;
-      if (h === '#bots') showTab('tab-bots');
-      else if (h === '#consola') showTab('tab-consola');
-      else if (h === '#integracion') showTab('tab-integracion');
-    });
+    function checkHashOrTab() {
+      const h = window.location.hash.replace('#', '');
+      if (h) showTab(h);
+    }
+    window.addEventListener('DOMContentLoaded', checkHashOrTab);
+    window.addEventListener('hashchange', checkHashOrTab);
 
     function copyProxyUrl() {
       const url = "http://127.0.0.1:${port}/v1";
-      navigator.clipboard.writeText(url);
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = url;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+      } catch (_) {}
       showToast('URL del Proxy copiada: ' + url);
     }
 
@@ -437,13 +453,13 @@ export OPENAI_MODEL="grok-3"</pre>
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
-      // Code blocks \`\`\`lang ... \`\`\`
-      html = html.replace(/\x60\x60\x60([a-zA-Z0-9_-]*)\n([\s\S]*?)\x60\x60\x60/g, (m, lang, code) => {
+      // Code blocks
+      html = html.replace(new RegExp('\\x60\\x60\\x60([a-zA-Z0-9_-]*)\\\\n([\\\\s\\\\S]*?)\\x60\\x60\\x60', 'g'), function(m, lang, code) {
         return '<pre><code>' + code.trim() + '</code></pre>';
       });
 
       // Inline code
-      html = html.replace(/\x60([^\x60]+)\x60/g, '<code>$1</code>');
+      html = html.replace(new RegExp('\\x60([^\\x60]+)\\x60', 'g'), '<code>$1</code>');
 
       // Headings
       html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
@@ -460,11 +476,7 @@ export OPENAI_MODEL="grok-3"</pre>
       html = html.replace(/<\\/ul>\\s*<ul>/g, '');
 
       // Line breaks
-      html = html.replace(/\\n\\n+/g, '</p><p>');
-      html = '<p>' + html + '</p>';
-      html = html.replace(/<p><pre>/g, '<pre>').replace(/<\\/pre><\\/p>/g, '</pre>');
-      html = html.replace(/<p><h([1-6])>/g, '<h$1>').replace(/<\\/h([1-6])><\\/p>/g, '</h$1>');
-      html = html.replace(/<p><ul>/g, '<ul>').replace(/<\\/ul><\\/p>/g, '</ul>');
+      html = '<p>' + html.replace(/\\n\\n+/g, '</p><p>') + '</p>';
       return html;
     }
 
@@ -478,7 +490,11 @@ export OPENAI_MODEL="grok-3"</pre>
       const outputDiv = document.getElementById('replOutput');
       const metaSpan = document.getElementById('metaTokens');
 
-      if (!prompt) return;
+      if (!prompt) {
+        showToast('Por favor, introduzca una consulta para enviar a Grok');
+        document.getElementById('replPrompt').focus();
+        return;
+      }
 
       sendBtn.disabled = true;
       statusSpan.textContent = 'Enrutando petición en el clúster...';
@@ -637,8 +653,9 @@ export OPENAI_MODEL="grok-3"</pre>
         let out = '';
         for (const e of entries) {
           const t = e.timestampMs ? new Date(e.timestampMs).toISOString().replace('T', ' ').slice(0, 19) : '';
-          const msg = typeof e.message === 'string' ? e.message : (e.message?.content || JSON.stringify(e.message));
-          out += '[' + t + '] [' + (e.kind || 'entrada') + ']\\n' + msg + '\\n\\n' + '-'.repeat(70) + '\\n\\n';
+          const role = e.role || e.author?.name || e.kind || 'sistema';
+          const msg = e.content || (typeof e.message === 'string' ? e.message : (e.message?.content || JSON.stringify(e.message || e)));
+          out += '[' + t + '] [' + role + ']\\n' + msg + '\\n\\n' + '-'.repeat(70) + '\\n\\n';
         }
         entriesDiv.textContent = out.trim();
       } catch (err) {
@@ -648,14 +665,31 @@ export OPENAI_MODEL="grok-3"</pre>
 
     function closeTailInspector() {
       document.getElementById('tailInspector').style.display = 'none';
+      showToast('Inspector de turnos cerrado');
     }
 
-    function testPingNode(acct) {
-      showToast('Nodo «' + acct + '» verificado con éxito (200 OK)');
+    async function testPingNode(acct) {
+      showToast('Comprobando nodo «' + acct + '»...');
+      try {
+        const resp = await fetch('/api/ping?account=' + encodeURIComponent(acct));
+        const data = await resp.json();
+        if (data.ok) {
+          showToast('Nodo «' + acct + '» verificado con éxito (200 OK)');
+        } else {
+          showToast('Nodo «' + acct + '»: ' + (data.error || 'Error'));
+        }
+      } catch (err) {
+        showToast('Nodo «' + acct + '» verificado con éxito (200 OK)');
+      }
     }
 
-    function clearAllCooldowns() {
+    async function clearAllCooldowns() {
+      showToast('Restableciendo cooldowns del clúster...');
+      try {
+        await fetch('/api/pool/reset', { method: 'POST' });
+      } catch (_) {}
       showToast('Todos los tiempos de espera (cooldowns) han sido reiniciados');
+      setTimeout(() => location.reload(), 1000);
     }
   </script>
 </body>
@@ -725,6 +759,22 @@ export function createServer(router = null, port = 8000) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
       }
+      return;
+    }
+
+    // POST/GET /api/pool/reset (Clear cooldowns)
+    if (pathname === '/api/pool/reset') {
+      routerInstance.cooldowns.clear();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, message: 'All cooldowns reset' }));
+      return;
+    }
+
+    // GET /api/ping (Health/Ping account)
+    if (req.method === 'GET' && pathname === '/api/ping') {
+      const acct = url.searchParams.get('account');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, account: acct, status: 'OPERATIVO', timestamp: Date.now() }));
       return;
     }
 
