@@ -219,7 +219,7 @@ export async function runCli(argv = process.argv) {
   const args = parseCliArgs(argv);
 
   if (args.flags.version) {
-    console.log('grokbot 1.1.2');
+    console.log('grokbot 1.2.0');
     return 0;
   }
 
