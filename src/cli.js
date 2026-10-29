@@ -9,6 +9,7 @@ import { ConfigManager } from './config.js';
 import { GrokPoolRouter } from './pool.js';
 import { ConversationExporter } from './exporter.js';
 import { SkillManager } from './skills.js';
+import { GrokAgentClient } from './agent.js';
 import { runServer } from './server.js';
 import { runDoctor } from './doctor.js';
 import { runMcpServer } from './mcp.js';
@@ -96,7 +97,7 @@ export function renderSvgClusterCard(statusList) {
 
 export function printHelp() {
   console.log(`
-grokbot 1.1.2 — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
+grokbot 1.2.0 — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
 
 Usage:
   grokbot <command> [options]
@@ -108,6 +109,7 @@ Core Commands:
   chat                     Start an interactive multi-turn REPL chat session
   batch <file>             Execute batch prompts in parallel across all pool accounts
   pool <subcommand>        Manage multi-account pool (list, status, add, remove, clear-cooldown)
+  agent <subcommand>       Native WebSocket bot agent management (roster, call, tail, prompt)
   export [options]         Export conversations across desktop persistence & web REST
   tokens <file|string>     Calculate token density and estimate markdown savings
   skills <subcommand>      Manage account-level skill library (list, sync-pool)
@@ -201,7 +203,7 @@ function parseCliArgs(argv) {
     } else {
       if (!args.command) {
         args.command = arg;
-      } else if (!args.subcommand && ['pool', 'skills'].includes(args.command)) {
+      } else if (!args.subcommand && ['pool', 'skills', 'agent', 'bot'].includes(args.command)) {
         args.subcommand = arg;
       } else {
         args.positionals.push(arg);
@@ -491,6 +493,169 @@ export async function runCli(argv = process.argv) {
       }
 
       process.stderr.write(`Unknown pool subcommand: ${sub}\n`);
+      return 1;
+    }
+
+    case 'agent':
+    case 'bot': {
+      const agentClient = new GrokAgentClient(cfg);
+      const sub = args.subcommand || 'roster';
+
+      if (sub === 'roster') {
+        const targetAcct = args.positionals[0] || args.flags.account || null;
+        const acctsToQuery = targetAcct ? [targetAcct] : Array.from(cfg.accounts.keys());
+
+        if (acctsToQuery.length === 0) {
+          process.stderr.write('No accounts configured in pool.\n');
+          return 1;
+        }
+
+        const fullResults = {};
+        for (const acct of acctsToQuery) {
+          try {
+            const data = await agentClient.roster(acct);
+            fullResults[acct] = data;
+          } catch (err) {
+            fullResults[acct] = { error: err.message, agents: [], groups: [] };
+          }
+        }
+
+        if (args.flags.json) {
+          console.log(JSON.stringify(fullResults, null, 2));
+          return 0;
+        }
+
+        console.log('='.repeat(80));
+        console.log('🤖 GROK BOT AGENT ROSTER (Native WebSocket Gateway)');
+        console.log('='.repeat(80));
+
+        for (const [acct, data] of Object.entries(fullResults)) {
+          console.log(`\nAccount: [${acct}]`);
+          if (data.error) {
+            console.log(`  ❌ Connection Error: ${data.error}`);
+            continue;
+          }
+
+          const agents = data.agents || [];
+          const groups = data.groups || [];
+
+          console.log(`  Agents (${agents.length}):`);
+          if (agents.length === 0) {
+            console.log('    (None)');
+          } else {
+            for (const ag of agents) {
+              const lastActive = ag.lastTurnAt ? new Date(ag.lastTurnAt).toISOString().replace('T', ' ').slice(0, 19) : 'Never';
+              console.log(`    • ${ag.name.padEnd(35)} | ID: ${ag.agentId} | Last Active: ${lastActive}`);
+            }
+          }
+
+          if (groups.length > 0) {
+            console.log(`  Groups (${groups.length}):`);
+            for (const grp of groups) {
+              const membersCount = grp.members?.length || grp.memberIds?.length || 0;
+              console.log(`    👥 ${grp.name.padEnd(33)} | ID: ${grp.groupId || grp.id} | Members: ${membersCount}`);
+            }
+          }
+        }
+        console.log('\n' + '='.repeat(80));
+        return 0;
+      }
+
+      if (sub === 'call') {
+        const acct = args.positionals[0];
+        const method = args.positionals[1];
+        const rawParams = args.positionals[2] || '{}';
+
+        if (!acct || !method) {
+          process.stderr.write('Usage: grokbot agent call <account> <method> [paramsJson]\n');
+          process.stderr.write('Example: grokbot agent call hao bot.roster\n');
+          return 1;
+        }
+
+        let params = {};
+        try {
+          params = JSON.parse(rawParams);
+        } catch (err) {
+          process.stderr.write(`Invalid JSON params: ${err.message}\n`);
+          return 1;
+        }
+
+        try {
+          const res = await agentClient.call(acct, method, params);
+          console.log(JSON.stringify(res, null, 2));
+          return 0;
+        } catch (err) {
+          process.stderr.write(`RPC Call Failed: ${err.message}\n`);
+          return 1;
+        }
+      }
+
+      if (sub === 'tail') {
+        const acct = args.positionals[0];
+        const agentId = args.positionals[1];
+        const limit = Number(args.positionals[2]) || 20;
+
+        if (!acct || !agentId) {
+          process.stderr.write('Usage: grokbot agent tail <account> <agentId> [limit]\n');
+          return 1;
+        }
+
+        try {
+          const res = await agentClient.tail(acct, agentId, limit);
+          if (args.flags.json) {
+            console.log(JSON.stringify(res, null, 2));
+            return 0;
+          }
+
+          const entries = res?.entries || [];
+          console.log('='.repeat(80));
+          console.log(`📜 TRANSCRIPT TAIL: ${agentId} (${entries.length} entries on '${acct}')`);
+          console.log('='.repeat(80));
+
+          for (const e of entries) {
+            const timeStr = e.timestampMs ? new Date(e.timestampMs).toISOString().replace('T', ' ').slice(0, 19) : '';
+            const kind = e.kind || 'entry';
+            let msgText = '';
+            if (typeof e.message === 'string') {
+              msgText = e.message;
+            } else if (e.message && typeof e.message === 'object') {
+              msgText = e.message.content || e.message.text || JSON.stringify(e.message);
+            }
+            console.log(`[${timeStr}] [${kind}] ${msgText}`);
+          }
+          console.log('='.repeat(80));
+          return 0;
+        } catch (err) {
+          process.stderr.write(`Failed to get transcript tail: ${err.message}\n`);
+          return 1;
+        }
+      }
+
+      if (sub === 'prompt') {
+        const acct = args.positionals[0];
+        const agentId = args.positionals[1];
+        const promptText = args.positionals.slice(2).join(' ');
+
+        if (!acct || !agentId || !promptText) {
+          process.stderr.write('Usage: grokbot agent prompt <account> <agentId> <text>\n');
+          return 1;
+        }
+
+        try {
+          console.log(`⚡ Dispatching prompt to agent ${agentId} on account '${acct}'...`);
+          const res = await agentClient.prompt(acct, agentId, promptText);
+          console.log(`✅ Prompt dispatched successfully.`);
+          if (res) {
+            console.log(JSON.stringify(res, null, 2));
+          }
+          return 0;
+        } catch (err) {
+          process.stderr.write(`Failed to dispatch prompt: ${err.message}\n`);
+          return 1;
+        }
+      }
+
+      process.stderr.write(`Unknown agent subcommand: ${sub}. Available: roster, call, tail, prompt\n`);
       return 1;
     }
 

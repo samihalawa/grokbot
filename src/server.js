@@ -63,7 +63,7 @@ function getDashboardHtml(poolStatus, port) {
 </head>
 <body>
   <header>
-    <h1>🤖 grokbot <span class="badge">v1.1.2</span></h1>
+    <h1>🤖 grokbot <span class="badge">v1.2.0</span></h1>
     <div style="font-size: 0.9rem; color: var(--muted); display: flex; align-items: center; gap: 1rem;">
       <div>OpenAI Proxy: <code>http://127.0.0.1:${port}/v1</code></div>
       <div id="refreshTag" style="font-size: 0.8rem; color: var(--green);">● Live Connected</div>

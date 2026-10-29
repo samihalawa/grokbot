@@ -132,7 +132,26 @@ for await (const chunk of res) process.stdout.write(chunk.choices[0]?.delta?.con
 
 ---
 
-### 5. Native MCP Server (Claude Code & Cursor)
+### 5. Native WebSocket Bot Agent Orchestration (`grokbot agent`)
+Direct programmatic orchestration over native Node.js WebSocket to `wss://grok.com/ws/bot/?uid=${uid}` with zero external relays or Python scripts:
+
+```bash
+# List agent roster and group memberships across accounts
+grokbot agent roster [account]
+
+# Tail recent agent transcript entries in real-time
+grokbot agent tail <account> <agentId> [limit]
+
+# Send a prompt instruction directly to a bot's session
+grokbot agent prompt <account> <agentId> "Review latest filings"
+
+# Execute raw JSON-RPC 2.0 command over bot gateway
+grokbot agent call <account> <method> [paramsJson]
+```
+
+---
+
+### 6. Native MCP Server (Claude Code & Cursor)
 Expose Grok tools directly to AI pair programmers via Model Context Protocol:
 
 ```json
