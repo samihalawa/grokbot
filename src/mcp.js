@@ -5,6 +5,9 @@
  */
 
 import readline from 'node:readline';
+import { readFileSync } from 'node:fs';
+
+const PACKAGE_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 import { ConfigManager } from './config.js';
 import { GrokPoolRouter } from './pool.js';
 import { ConversationExporter } from './exporter.js';
@@ -13,6 +16,7 @@ const TOOLS = [
   {
     name: 'grok_ask',
     description: 'Query Grok with automatic multi-account pooling and quota failover.',
+    annotations: { readOnlyHint: false, openWorldHint: true, destructiveHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -32,6 +36,7 @@ const TOOLS = [
   {
     name: 'grok_pool_status',
     description: 'Check live health, active cooldowns, and request counts for all pool accounts.',
+    annotations: { readOnlyHint: true, openWorldHint: true, destructiveHint: false },
     inputSchema: {
       type: 'object',
       properties: {},
@@ -40,6 +45,7 @@ const TOOLS = [
   {
     name: 'grok_export',
     description: 'Export Grok conversations into a clean, token-efficient plain text or markdown archive.',
+    annotations: { readOnlyHint: false, openWorldHint: true, destructiveHint: true },
     inputSchema: {
       type: 'object',
       properties: {
@@ -79,7 +85,7 @@ export function runMcpServer() {
       const res = {
         protocolVersion: '2024-11-05',
         capabilities: { tools: {} },
-        serverInfo: { name: 'grokbot', version: '1.0.0' },
+        serverInfo: { name: 'grokbot', version: PACKAGE_VERSION },
       };
       process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result: res }) + '\n');
     } else if (method === 'notifications/initialized') {

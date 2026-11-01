@@ -1,11 +1,17 @@
 {
   "name": "grokbot",
-  "version": "1.0.0",
+  "version": "1.3.3",
   "description": "Universal Grok & Grok Bot orchestrator: multi-account pooling, automatic failover, and token-efficient export.",
-  "author": "Sami Halawa",
-  "entrypoint": "../bin/grok.js",
-  "mcpServer": {
-    "command": "node",
-    "args": ["../bin/grok.js", "mcp"]
+  "author": {
+    "name": "Sami Halawa"
+  },
+  "mcpServers": {
+    "grokbot": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/bin/grok.js",
+        "mcp"
+      ]
+    }
   }
 }

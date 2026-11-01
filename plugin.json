@@ -1,0 +1,50 @@
+{
+  "name": "grokbot",
+  "version": "1.3.3",
+  "description": "Universal Grok & Grok Bot orchestrator: multi-account pooling, automatic failover, and token-efficient export.",
+  "author": {
+    "name": "Sami Halawa"
+  },
+  "homepage": "https://github.com/samihalawa/grokbot#readme",
+  "repository": "https://github.com/samihalawa/grokbot",
+  "license": "MIT",
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": {
+        "displayName": "Grokbot",
+        "shortDescription": "Grok queries and local exports",
+        "longDescription": "Query Grok through your configured account pool, inspect pool status, and export your available conversation history. The plugin runs its bundled Node.js MCP server locally and exposes grok_ask, grok_pool_status and grok_export. It requires Node.js 20 or later and your own Grok account configuration; optional vault references use an authenticated 1Password CLI. Local configuration, browser sessions and credentials are not bundled. This is an independent integration.",
+        "developerName": "Sami Halawa",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Interactive",
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://github.com/samihalawa/grokbot",
+        "defaultPrompt": [
+          "Show the status of my configured Grok account pool.",
+          "Ask Grok to explain the technical question I provide.",
+          "Export my available Grok conversation history as Markdown."
+        ],
+        "supportURL": "https://github.com/samihalawa/grokbot/issues",
+        "logo": "./assets/icon.svg",
+        "composerIcon": "./assets/icon.svg",
+        "privacyPolicyURL": "https://github.com/samihalawa/grokbot/blob/main/PRIVACY.md",
+        "termsOfServiceURL": "https://github.com/samihalawa/grokbot/blob/main/TERMS.md"
+      },
+      "review": {
+        "prompts": [
+          "Show the status of my configured Grok account pool.",
+          "Ask Grok to explain the technical question I provide.",
+          "Export my available Grok conversation history as Markdown."
+        ]
+      },
+      "publication": {
+        "release_notes": "Added portable package metadata, original icon, privacy and terms documentation; retained the existing workflows and runtime requirements."
+      }
+    }
+  }
+}

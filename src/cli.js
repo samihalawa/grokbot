@@ -5,6 +5,8 @@
 
 import fs from 'node:fs';
 import readline from 'node:readline';
+
+const PACKAGE_VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 import { ConfigManager } from './config.js';
 import { GrokPoolRouter } from './pool.js';
 import { ConversationExporter } from './exporter.js';
@@ -97,7 +99,7 @@ export function renderSvgClusterCard(statusList) {
 
 export function printHelp() {
   console.log(`
-grokbot 1.3.2 — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
+grokbot ${PACKAGE_VERSION} — Universal Grok & Grok Bot CLI & Multi-Account Orchestrator
 
 Usage:
   grokbot <command> [options]
@@ -228,7 +230,7 @@ export async function runCli(argv = process.argv) {
   const args = parseCliArgs(argv);
 
   if (args.flags.version) {
-    console.log('grokbot 1.3.2');
+    console.log(`grokbot ${PACKAGE_VERSION}`);
     return 0;
   }
 

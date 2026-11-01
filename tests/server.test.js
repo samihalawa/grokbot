@@ -1,9 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createServer } from '../src/server.js';
+import { ConfigManager } from '../src/config.js';
+import { GrokPoolRouter } from '../src/pool.js';
 
 test('Server: returns OpenAI models list and health status', async () => {
-  const server = createServer();
+  const root = mkdtempSync(join(tmpdir(), 'grokbot-server-test-'));
+  const config = new ConfigManager(join(root, 'config.json'));
+  config.accounts.clear();
+  const router = new GrokPoolRouter(config, join(root, 'state.json'));
+  const server = createServer(router);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const port = server.address().port;
   const baseUrl = `http://127.0.0.1:${port}`;
@@ -45,6 +54,7 @@ test('Server: returns OpenAI models list and health status', async () => {
     });
     assert.equal(respBad.status, 400);
   } finally {
-    server.close();
+    await new Promise((resolve) => server.close(resolve));
+    rmSync(root, { recursive: true, force: true });
   }
 });
