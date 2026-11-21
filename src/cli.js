@@ -111,7 +111,7 @@ Core Commands:
   chat                     Start an interactive multi-turn REPL chat session
   batch <file>             Execute batch prompts in parallel across all pool accounts
   pool <subcommand>        Manage multi-account pool (list, status, add, remove, clear-cooldown)
-  agent <subcommand>       Native WebSocket bot agent management (roster, call, tail, prompt)
+  agent <subcommand>       Native WebSocket bot agent management (roster, call, tail, prompt, review)
   export [options]         Export conversations across desktop persistence & web REST
   tokens <file|string>     Calculate token density and estimate markdown savings
   skills <subcommand>      Manage account-level skill library (list, sync-pool)
@@ -669,7 +669,25 @@ export async function runCli(argv = process.argv) {
         }
       }
 
-      process.stderr.write(`Unknown agent subcommand: ${sub}. Available: roster, call, tail, prompt\n`);
+      if (sub === 'review') {
+        const [account, agentId, ...evidence] = args.positionals;
+        if (!account || !agentId) {
+          process.stderr.write('Usage: grokbot agent review <account> <agentId> [primary evidence...] [--apply-guardian]\n');
+          return 1;
+        }
+        try {
+          const review = await agentClient.review(account, agentId, {
+            evidence, applyCorrection: args.flags['apply-guardian'] === true,
+          });
+          console.log(JSON.stringify(review, null, 2));
+          return 0;
+        } catch (err) {
+          process.stderr.write(`Guardian review failed: ${err.message}\n`);
+          return 1;
+        }
+      }
+
+      process.stderr.write(`Unknown agent subcommand: ${sub}. Available: roster, call, tail, prompt, review\n`);
       return 1;
     }
 

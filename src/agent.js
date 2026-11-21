@@ -1,3 +1,39 @@
+import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+
+const guardianTag = "[SAMI'S INTENT GUARDIAN]";
+
+function entryText(entry) {
+  const value = entry.content ?? entry.message;
+  const text = typeof value === 'string' ? value : value?.content ?? value?.text;
+  return typeof text === 'string' ? text.trim() : '';
+}
+
+export function guardianJob(agentId, entries, evidence) {
+  const lastUser = entries.findLastIndex(entry => entry.kind === 'message' && entry.role === 'user');
+  const lastTask = entries.findLastIndex(entry => entry.kind === 'message' && entry.role === 'user'
+    && !entryText(entry).startsWith(guardianTag));
+  if (lastTask < 0 || !entryText(entries[lastTask])) {
+    throw new Error('The original GrokBot task is missing from the native transcript tail');
+  }
+  const replies = entries.slice(lastUser + 1)
+    .filter(entry => entry.kind === 'send-message' || (entry.kind === 'message' && entry.role === 'assistant'))
+    .map(entryText).filter(Boolean);
+  if (!replies.length) throw new Error('No native GrokBot reply after the latest message');
+  const job = { session_id: agentId, prompt: entryText(entries[lastTask]), evidence, result: replies.join('\n\n') };
+  const newestUser = entries[lastUser];
+  if (lastUser !== lastTask && newestUser.id) {
+    // Canonical Guardian computes this digest over the JSON-encoded correction text.
+    job.delivery = {
+      correction_hash: createHash('sha256').update(JSON.stringify(entryText(newestUser))).digest('hex'),
+      source_id: newestUser.id,
+    };
+  }
+  return job;
+}
+
 /**
  * Native WebSocket Grok Bot & Agent Orchestration Client.
  * Connects directly to wss://grok.com/ws/bot/?uid=${uid} using native Node.js WebSocket.
@@ -182,5 +218,34 @@ export class GrokAgentClient {
   async prompt(accountName, agentId, promptText) {
     const args = { agentId, prompt: promptText };
     return this.callBotCommand(accountName, agentId, 'sendPrompt', args);
+  }
+
+  /** Review a completed native bot turn through the shared local Guardian. */
+  async review(accountName, agentId, { evidence = [], applyCorrection = false } = {}) {
+    const roster = await this.roster(accountName);
+    const agent = roster.agents.find(item => item.agentId === agentId);
+    if (!agent || agent.status !== 'idle') {
+      throw new Error('Review requires an idle bot in the named account');
+    }
+    const transcript = await this.tail(accountName, agentId, 100);
+    const job = guardianJob(agentId, transcript.entries ?? [], evidence);
+    const script = join(homedir(), '.agents', 'skills', 'multi-agent-orchestrator', 'scripts', 'intent_guardian.py');
+    const process = spawnSync('python3', [script, 'review-job', '--host', 'grokbot'], {
+      input: JSON.stringify(job), encoding: 'utf8', timeout: 90000, maxBuffer: 256 * 1024,
+    });
+    if (process.error || process.status !== 0 || !process.stdout) {
+      throw new Error('The installed Intent Guardian did not return a job review');
+    }
+    const review = JSON.parse(process.stdout);
+    const correction = review.hook_output?.hookSpecificOutput?.additionalContext;
+    if (applyCorrection && correction?.startsWith(guardianTag + ' ')) {
+      const current = await this.tail(accountName, agentId, 1);
+      if (current.entries?.at(-1)?.id !== transcript.entries.at(-1)?.id) {
+        throw new Error('The bot transcript changed during review. Read the latest turn before sending a correction.');
+      }
+      const dispatch = await this.prompt(accountName, agentId, correction);
+      return { ...review, correction_dispatch: dispatch };
+    }
+    return review;
   }
 }

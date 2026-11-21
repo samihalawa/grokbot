@@ -145,9 +145,14 @@ grokbot agent tail <account> <agentId> [limit]
 # Send a prompt instruction directly to a bot's session
 grokbot agent prompt <account> <agentId> "Review latest filings"
 
+# Review an idle bot's latest reply with the installed Intent Guardian
+grokbot agent review <account> <agentId> "Primary evidence, if available"
+
 # Execute raw JSON-RPC 2.0 command over bot gateway
 grokbot agent call <account> <method> [paramsJson]
 ```
+
+`agent review` calls the shared `multi-agent-orchestrator` skill's Intent Guardian executable once for the native reply. Add `--apply-guardian` to send a newly returned tagged correction to that same bot. After it replies, run the review again with the new primary evidence to confirm follow-through. Without the flag, the review only returns the verdict.
 
 ---
 
